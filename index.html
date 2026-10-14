@@ -136,6 +136,15 @@
   .mini td,.mini th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
   .mini .n{text-align:right;white-space:nowrap}
   details summary{cursor:pointer;font-size:12px;color:var(--steel);margin-top:8px}
+  .imp-sum{font-size:13px;margin:8px 0}
+  .imp-sum b{margin-right:10px}
+  .imp-prev{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+  .imp-prev table{width:100%;border-collapse:collapse;font-size:12px}
+  .imp-prev td,.imp-prev th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  .imp-prev th{background:var(--bg);position:sticky;top:0}
+  .imp-prev tr.bad td{color:var(--red)}
+  .imp-prev tr.dup td{color:var(--amber)}
+  .head2 .rowbtns button{padding:7px 12px;font-size:13px}
 </style>
 </head>
 <body>
@@ -162,7 +171,8 @@
   <div id="stockView" style="display:none">
     <section>
       <div class="head2"><h2>Sản phẩm &amp; tồn kho</h2>
-        <button type="button" class="btn-teal" id="pAdd" style="padding:7px 12px">＋ Thêm sản phẩm</button></div>
+        <span class="rowbtns"><button type="button" class="btn-ghost" id="pImp">⬆ Nhập Excel</button>
+        <button type="button" class="btn-teal" id="pAdd">＋ Thêm sản phẩm</button></span></div>
       <div class="grid">
         <div style="grid-column:span 2"><label>Tìm theo mã / tên sản phẩm</label><input id="sQ" placeholder="vd: SP03 hoặc legging"></div>
         <div><label>Lọc</label><select id="sFilter">
@@ -177,7 +187,8 @@
   <div id="custView" style="display:none">
     <section>
       <div class="head2"><h2>Khách hàng</h2>
-        <button type="button" class="btn-teal" id="cAdd" style="padding:7px 12px">＋ Thêm khách</button></div>
+        <span class="rowbtns"><button type="button" class="btn-ghost" id="cImp">⬆ Nhập Excel</button>
+        <button type="button" class="btn-teal" id="cAdd">＋ Thêm khách</button></span></div>
       <div class="grid">
         <div style="grid-column:span 2"><label>Tìm theo tên / SĐT / mã</label>
           <input id="cQ" list="custList" placeholder="Gõ để tìm khách…"></div>
@@ -594,6 +605,7 @@ function openForm(title, fields, values, onSave) {
            : `<input name="${f.k}" value="${esc(values[f.k] ?? '')}"${f.num ? ' inputmode="numeric"' : ''}${f.ro ? ' readonly style="background:var(--bg)"' : ''}${f.ph ? ` placeholder="${esc(f.ph)}"` : ''}>`
   }</div>`).join('');
   mSubmit = onSave;
+  $('mSave').textContent = 'Lưu'; $('mSave').disabled = false;
   $('modal').style.display = 'flex';
   const first = $('mBody').querySelector('input:not([readonly]),select'); if (first) first.focus();
 }
@@ -1021,6 +1033,126 @@ $('tgSave').onclick = () => {
     r => (r.added ? 'Đã thêm' : 'Đã cập nhật') + ' tỷ giá ' + money(r.rate) + ' ngày ' + dd + '.',
     () => { tgOldDay = ''; $('tgRate').value = ''; $('tgNote').value = ''; $('tgSave').textContent = '✔ Lưu tỷ giá'; loadRates(); });
 };
+
+/* ---------------- nhập hàng loạt từ Excel (khách hàng / sản phẩm) ---------------- */
+// thư viện đọc/ghi Excel chỉ tải khi cần
+let xlsxLoading = null;
+function needXlsx() {
+  if (window.XLSX) return Promise.resolve();
+  return xlsxLoading || (xlsxLoading = new Promise((ok, fail) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload = ok; sc.onerror = () => { xlsxLoading = null; fail(new Error('Không tải được thư viện Excel – kiểm tra mạng.')); };
+    document.head.appendChild(sc);
+  }));
+}
+const IMP = {
+  cust: {
+    title: 'Nhập khách hàng từ Excel', fn: 'importCustomers', sheet: 'KhachHang', dupLabel: 'SĐT đã có',
+    cols: [['name', 'Tên khách *', ['ten khach', 'ho va ten', 'ho ten', 'ten kh', 'khach hang', 'ten']],
+           ['phone', 'SĐT', ['sdt', 'so dien thoai', 'dien thoai', 'phone', 'zalo']],
+           ['address', 'Địa chỉ', ['dia chi']], ['facebook', 'Facebook', ['facebook', 'fb']],
+           ['group', 'Nhóm khách', ['nhom']]],
+    sample: [['Chị Lan', '0901234567', 'Q.1, TP.HCM', '', 'Khách lẻ'], ['Shop Hoa', '0912345678', 'Hà Nội', 'https://facebook.com/shophoa', 'Khách sỉ']],
+    key: r => String(r.phone || '').replace(/\D/g, ''),
+    have: () => new Set(D.customers.map(c => String(c.phone).replace(/\D/g, '')).filter(Boolean)),
+    fix: r => { r.phone = String(r.phone ?? '').trim(); if (/^\d{9}$/.test(r.phone)) r.phone = '0' + r.phone;
+      if (r.group && !GROUPS.includes(r.group)) r.group = GROUPS.find(g => norm(g) === norm(r.group)) || r.group; return r.name ? '' : 'Thiếu tên'; },
+  },
+  prod: {
+    title: 'Nhập sản phẩm từ Excel', fn: 'importProducts', sheet: 'SanPham', dupLabel: 'Mã đã có',
+    cols: [['code', 'Mã hàng (trống = tự cấp)', ['ma hang', 'ma sp', 'ma san pham', 'ma']],
+           ['name', 'Tên sản phẩm *', ['ten san pham', 'ten sp', 'ten hang', 'ten']],
+           ['price', 'Giá bán (VNĐ)', ['gia ban']], ['priceCny', 'Giá nhập (tệ)', ['gia nhap', 'gia te', 'te']],
+           ['ship', 'Ship + phí DV /sp (VNĐ)', ['ship', 'phi']], ['link', 'Link Taobao', ['link', 'taobao']]],
+    sample: [['SP20', 'Áo thun basic', 129000, 22.5, 15000, 'https://item.taobao.com/...'], ['', 'Quần short thể thao', 159000, 30, 15000, '']],
+    key: r => String(r.code || '').trim().toUpperCase(),
+    have: () => new Set(D.products.map(p => p.code.toUpperCase())),
+    fix: r => { r.code = String(r.code ?? '').trim();
+      r.price = r.price === '' ? '' : num(r.price);
+      ['priceCny', 'ship'].forEach(k => { r[k] = r[k] === '' ? '' : typeof r[k] === 'number' ? r[k] : +String(r[k]).replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.') || 0; });
+      return r.name ? '' : 'Thiếu tên'; },
+  },
+};
+let impRows = [];
+function openImport(kind) {
+  const cfg = IMP[kind];
+  $('mTitle').textContent = cfg.title;
+  $('mBody').innerHTML = `<div class="full" style="font-size:13px">
+      File Excel (.xlsx, .xls) hoặc .csv, <b>dòng đầu là tiêu đề cột</b>: ${cfg.cols.map(c => esc(c[1])).join(', ')}.
+      <br><a href="#" id="impTpl">⬇ Tải file mẫu</a></div>
+    <div class="full"><input type="file" id="impFile" accept=".xlsx,.xls,.csv"></div>
+    <div class="full"><label>Nếu đã có (${esc(cfg.dupLabel)})</label>
+      <select id="impMode"><option value="skip">Bỏ qua, giữ nguyên dữ liệu cũ</option><option value="update">Cập nhật theo file</option></select></div>
+    <div class="full" id="impOut"></div>`;
+  impRows = [];
+  $('mSave').textContent = 'Nhập vào hệ thống'; $('mSave').disabled = true;
+  $('modal').style.display = 'flex';
+  $('impTpl').onclick = ev => { ev.preventDefault(); needXlsx().then(() => {
+    const ws = XLSX.utils.aoa_to_sheet([cfg.cols.map(c => c[1].replace(' *', '').replace(' (trống = tự cấp)', ''))].concat(cfg.sample));
+    ws['!cols'] = cfg.cols.map(() => ({ wch: 22 }));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, cfg.sheet);
+    XLSX.writeFile(wb, 'Mau_nhap_' + cfg.sheet + '.xlsx');
+  }).catch(e => alert(e.message)); };
+  $('impFile').onchange = () => readImport(kind);
+  $('impMode').onchange = () => impRows.length && previewImport(kind);
+  mSubmit = () => {
+    const ok = impRows.filter(r => !r._err);
+    if (!ok.length) return alert('Không có dòng hợp lệ để nhập.');
+    if (!confirm(`Nhập ${ok.length} dòng vào ${kind === 'cust' ? 'KHACH_HANG' : 'DANH_MUC'}?`)) return;
+    const rows = ok.map(r => { const o = { line: r._line }; cfg.cols.forEach(([k]) => { o[k] = r[k]; }); return o; });
+    act(cfg.fn, [rows, $('impMode').value], r => `Đã nhập: thêm ${r.added}, cập nhật ${r.updated}, bỏ qua ${r.skipped}`
+      + (r.errors.length ? `, lỗi ${r.errors.length} (dòng ${r.errors.map(e => e.line).join(', ')})` : '') + '.',
+      () => { $('mSave').textContent = 'Lưu'; kind === 'cust' ? renderCusts() : renderStock(); });
+  };
+}
+function readImport(kind) {
+  const f = $('impFile').files[0]; if (!f) return;
+  $('impOut').innerHTML = '<p style="color:var(--muted)">Đang đọc file…</p>';
+  needXlsx().then(() => f.arrayBuffer()).then(buf => {
+    const wb = XLSX.read(buf, { type: 'array' });
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+    const cfg = IMP[kind];
+    // tìm dòng tiêu đề trong 15 dòng đầu (dòng có nhiều tên cột khớp nhất)
+    let hi = -1, map = null, best = 0;
+    aoa.slice(0, 15).forEach((row, i) => {
+      const m = {}, used = new Set();
+      cfg.cols.forEach(([k, , keys]) => {
+        const j = row.findIndex((h, jj) => !used.has(jj) && keys.some(key => { const n = norm(String(h).trim()); return n === key || n.startsWith(key + ' ') || (key.length > 3 && n.includes(key)); }));
+        if (j >= 0) { m[k] = j; used.add(j); }
+      });
+      const c = Object.keys(m).length;
+      if (c > best) { best = c; hi = i; map = m; }
+    });
+    const need = kind === 'cust' ? 'name' : 'name';
+    if (!map || map[need] === undefined) throw new Error('Không tìm thấy cột "' + cfg.cols.find(c => c[0] === need)[1] + '" – dùng file mẫu cho đúng tiêu đề.');
+    impRows = aoa.slice(hi + 1).map((row, i) => {
+      const r = { _line: hi + i + 2 };
+      cfg.cols.forEach(([k]) => { const v = map[k] === undefined ? '' : row[map[k]]; r[k] = typeof v === 'string' ? v.trim() : v; });
+      return r;
+    }).filter(r => cfg.cols.some(([k]) => r[k] !== '' && r[k] !== null));
+    impRows.forEach(r => { r._err = cfg.fix(r); });
+    previewImport(kind, Object.keys(map));
+  }).catch(e => { $('impOut').innerHTML = `<p class="neg">${esc(e.message)}</p>`; $('mSave').disabled = true; });
+}
+function previewImport(kind, found) {
+  const cfg = IMP[kind], have = cfg.have(), upd = $('impMode').value === 'update';
+  impRows.forEach(r => { r._dup = !r._err && cfg.key(r) && have.has(cfg.key(r)); });
+  const bad = impRows.filter(r => r._err).length, dup = impRows.filter(r => r._dup).length;
+  const add = impRows.length - bad - dup;
+  $('impOut').innerHTML = `<div class="imp-sum"><b>${impRows.length} dòng</b><b class="pos">${add} mới</b>
+      <b style="color:var(--amber)">${dup} ${esc(cfg.dupLabel.toLowerCase())} → ${upd ? 'cập nhật' : 'bỏ qua'}</b>${bad ? `<b class="neg">${bad} lỗi (không nhập)</b>` : ''}</div>
+    ${found ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">Đã nhận cột: ${cfg.cols.filter(c => found.includes(c[0])).map(c => esc(c[1])).join(', ')}</div>` : ''}
+    <div class="imp-prev"><table><tr><th>Dòng</th>${cfg.cols.map(c => `<th>${esc(c[1])}</th>`).join('')}<th></th></tr>
+      ${impRows.slice(0, 300).map(r => `<tr class="${r._err ? 'bad' : r._dup ? 'dup' : ''}"><td>${r._line}</td>
+        ${cfg.cols.map(([k]) => `<td>${esc(r[k])}</td>`).join('')}<td>${r._err ? '⚠ ' + esc(r._err) : r._dup ? (upd ? 'cập nhật' : 'bỏ qua') : 'mới'}</td></tr>`).join('')}
+    </table></div>${impRows.length > 300 ? `<div style="font-size:12px;color:var(--muted)">… chỉ xem trước 300 dòng đầu, khi nhập vẫn nhập đủ.</div>` : ''}`;
+  $('mSave').disabled = !impRows.some(r => !r._err) || (!upd && add === 0);
+}
+$('cImp').onclick = () => openImport('cust');
+$('pImp').onclick = () => openImport('prod');
+// đóng hộp thoại thì trả lại chữ nút Lưu
+$('mCancel').addEventListener('click', () => { $('mSave').textContent = 'Lưu'; $('mSave').disabled = false; });
 
 load();
 loadDash();
