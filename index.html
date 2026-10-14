@@ -114,6 +114,28 @@
   .xnt .n{text-align:right}
   .xnt tfoot td{font-weight:bold;border-top:2px solid var(--navy)}
   .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+  nav{overflow-x:auto;scrollbar-width:none}
+  nav button{flex:1 0 auto;white-space:nowrap;padding:10px 12px}
+  .kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .kpi{background:var(--bg);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--muted)}
+  .kpi b{display:block;font-size:22px;color:var(--navy);margin:2px 0}
+  .kpi.warn b{color:var(--red)}
+  .delta{font-size:11px;font-weight:bold}.delta.up{color:var(--green)}.delta.down{color:var(--red)}
+  .bars{display:flex;align-items:flex-end;gap:6px;height:180px;padding:22px 4px 0;border-bottom:1px solid #CBD5E1}
+  .bar{flex:1;position:relative;height:100%;display:flex;align-items:flex-end;cursor:default}
+  .bar i{display:block;width:100%;background:var(--teal);border-radius:4px 4px 0 0;min-height:1px}
+  .bar:hover i{background:var(--navy)}
+  .bar .lbl{position:absolute;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text);white-space:nowrap}
+  .bar .tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;
+            font-size:11px;padding:6px 8px;border-radius:4px;white-space:nowrap;z-index:3;margin-bottom:4px}
+  .bar:hover .tip{display:block}
+  .axis{display:flex;gap:6px;padding:4px 4px 0;font-size:11px;color:var(--muted)}
+  .axis span{flex:1;text-align:center}.axis span.cur{color:var(--navy);font-weight:bold}
+  .two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .mini{width:100%;border-collapse:collapse;font-size:12px}
+  .mini td,.mini th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+  .mini .n{text-align:right;white-space:nowrap}
+  details summary{cursor:pointer;font-size:12px;color:var(--steel);margin-top:8px}
 </style>
 </head>
 <body>
@@ -132,7 +154,7 @@
 </form></div>
 <header><h1>🧾 Quản lý bán hàng</h1><span><button type="button" id="pinOut" title="Xóa mã PIN đã nhớ trên máy này">Thoát</button>
   <span class="code" id="orderCode">…</span></span></header>
-<nav><button type="button" class="on" id="navNew">＋ Tạo đơn</button><button type="button" id="navList">☰ Đơn hàng</button><button type="button" id="navCust">☺ Khách</button><button type="button" id="navStock">▦ Sản phẩm</button><button type="button" id="navKho">⇅ Kho</button></nav>
+<nav><button type="button" class="on" id="navDash">◎ Tổng quan</button><button type="button" id="navNew">＋ Tạo đơn</button><button type="button" id="navList">☰ Đơn hàng</button><button type="button" id="navCust">☺ Khách</button><button type="button" id="navStock">▦ Sản phẩm</button><button type="button" id="navKho">⇅ Kho</button><button type="button" id="navRate">¥ Tỷ giá</button></nav>
 <main id="app" class="loading">
   <div id="msg" class="msg"></div>
   <input type="file" id="imgFile" accept="image/*" style="display:none">
@@ -164,6 +186,25 @@
     </section>
     <div id="custDetail"></div>
     <div id="custRows"></div>
+  </div>
+
+  <div id="dashView"><div id="dashBox"><p style="color:var(--muted)">Đang tải tổng quan…</p></div></div>
+
+  <div id="rateView" style="display:none">
+    <section>
+      <h2>Tỷ giá tệ → VNĐ</h2>
+      <div class="kpis"><div class="kpi">Tỷ giá mới nhất<b id="tgNow">…</b><span id="tgNowDate"></span></div></div>
+      <div class="grid" style="margin-top:12px">
+        <div><label>Ngày</label><input type="date" id="tgDay"></div>
+        <div><label>Tỷ giá (VNĐ / 1 tệ)</label><input id="tgRate" inputmode="numeric" placeholder="vd: 3650"></div>
+        <div><label>Ghi chú</label><input id="tgNote" placeholder="vd: giá chuyển khoản"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="tgSave" style="width:100%">✔ Lưu tỷ giá</button></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Ngày đã có tỷ giá thì lưu sẽ <b>sửa</b> dòng của ngày đó.
+        Phiếu nhập để trống tỷ giá sẽ lấy tỷ giá gần nhất <b>trước hoặc bằng ngày về hàng</b>, nên sửa / xóa tỷ giá cũ sẽ làm đổi giá vốn các lô nhập trong khoảng ngày đó.
+        Giá vốn ước tính ở danh mục luôn dùng tỷ giá mới nhất.</div>
+    </section>
+    <div id="tgList"></div>
   </div>
 
   <div id="khoView" style="display:none">
@@ -221,7 +262,7 @@
     <div id="orderList"></div>
   </div>
 
-  <div id="form">
+  <div id="form" style="display:none">
     <section>
       <h2>Khách hàng</h2>
       <div class="tabs">
@@ -323,7 +364,7 @@ $('pinForm').onsubmit = ev => {
   ev.preventDefault();
   PIN = $('pinInput').value.trim();
   try { localStorage.setItem('pin', PIN); } catch (e) { /* bỏ qua */ }
-  $('pinGate').style.display = 'none'; clearMsg(); load();
+  $('pinGate').style.display = 'none'; clearMsg(); load(); if ($('dashView').style.display !== 'none') loadDash();
 };
 $('pinOut').onclick = () => { try { localStorage.removeItem('pin'); localStorage.removeItem('initData'); } catch (e) {} PIN = ''; askPin('Đã thoát. Nhập mã PIN để dùng lại.'); };
 
@@ -520,7 +561,7 @@ $('rNew').onclick = () => {
 
 /* ---------------- xem đơn theo ngày ---------------- */
 const ymd = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-const VIEWS = { new: ['form', 'navNew'], list: ['listView', 'navList'], stock: ['stockView', 'navStock'], cust: ['custView', 'navCust'],
+const VIEWS = { dash: ['dashView', 'navDash'], rate: ['rateView', 'navRate'], new: ['form', 'navNew'], list: ['listView', 'navList'], stock: ['stockView', 'navStock'], cust: ['custView', 'navCust'],
   kho: ['khoView', 'navKho'] };
 function showView(v) {
   Object.entries(VIEWS).forEach(([k, [box, nav]]) => {
@@ -533,12 +574,16 @@ function showView(v) {
   if (v === 'stock') renderStock();
   if (v === 'cust') renderCusts();
   if (v === 'kho') initKho();
+  if (v === 'dash') loadDash();
+  if (v === 'rate') loadRates();
 }
 $('navNew').onclick = () => showView('new');
 $('navList').onclick = () => showView('list');
 $('navStock').onclick = () => showView('stock');
 $('navCust').onclick = () => showView('cust');
 $('navKho').onclick = () => showView('kho');
+$('navDash').onclick = () => showView('dash');
+$('navRate').onclick = () => showView('rate');
 
 /* ---------------- hộp nhập liệu dùng chung (thêm / sửa) ---------------- */
 let mSubmit = null;
@@ -855,7 +900,130 @@ function renderXnt() {
     : '<p style="color:var(--muted)">Không có số liệu trong kỳ này.</p>';
 }
 
+/* ---------------- tổng quan (dashboard) ---------------- */
+let DASH_YEAR = new Date().getFullYear(), dashBusy = false;
+const fmtShort = n => { n = +n || 0; const a = Math.abs(n);
+  return a >= 1e9 ? (n / 1e9).toFixed(1).replace('.', ',') + ' tỷ' : a >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + 'tr'
+    : a >= 1e3 ? Math.round(n / 1e3) + 'k' : String(n); };
+function loadDash() {
+  if (dashBusy) return; dashBusy = true;
+  run().withSuccessHandler(d => { dashBusy = false; renderDash(d); })
+    .withFailureHandler(e => { dashBusy = false; showMsg('Lỗi tải tổng quan: ' + e.message);
+      $('dashBox').innerHTML = '<p style="color:var(--muted)">Chưa tải được tổng quan.</p>'; })
+    .getDashboard(DASH_YEAR, PIN);
+}
+function delta(a, b) {
+  if (!b) return '';
+  const p = Math.round((a - b) / Math.abs(b) * 100);
+  return `<span class="delta ${p >= 0 ? 'up' : 'down'}">${p >= 0 ? '▲' : '▼'} ${Math.abs(p)}% so với tháng trước</span>`;
+}
+const kpi = (label, value, sub, warn) => `<div class="kpi${warn ? ' warn' : ''}">${label}<b>${value}</b>${sub || ''}</div>`;
+function renderDash(d) {
+  const t = d.todayStat, m = d.month, pm = d.prevMonth, o = d.open;
+  const max = Math.max(...d.months.map(x => x.revenue), 1);
+  const curM = new Date().getFullYear() === d.year ? new Date().getMonth() + 1 : 0;
+  const best = d.months.reduce((a, x) => (x.revenue > a.revenue ? x : a), d.months[0]);
+  const y0 = new Date().getFullYear();
+  $('dashBox').innerHTML = `
+    <section>
+      <div class="head2"><h2>Hôm nay • ${esc(d.today)}</h2><button type="button" class="btn-ghost" id="dReload" style="padding:6px 10px">↻ Làm mới</button></div>
+      <div class="kpis">
+        ${kpi('Đơn mới', t.orders)}${kpi('Giá trị đơn (VNĐ)', money(t.value))}${kpi('Đã giao', t.delivered)}
+        ${kpi('Chờ hàng', t.waiting, '', t.waiting > 0)}${kpi('Đang xử lý', t.processing)}${kpi('Đã hủy', t.cancelled)}
+      </div>
+    </section>
+    <section>
+      <h2>Tháng ${esc(d.monthLabel)}</h2>
+      <div class="kpis">
+        ${kpi('Doanh thu', money(m.revenue), delta(m.revenue, pm.revenue))}
+        ${kpi('Lãi gộp (sau giá vốn)', money(m.gross))}
+        ${kpi('Chi phí', money(m.expense))}
+        ${kpi('LỢI NHUẬN', money(m.profit), delta(m.profit, pm.profit), m.profit < 0)}
+        ${kpi('Số đơn', m.orders)}
+      </div>
+    </section>
+    <section>
+      <h2>Cần xử lý</h2>
+      <div class="kpis">
+        ${kpi('Đơn đang chờ hàng', o.waiting, `<span>${money(o.waitingValue)}đ</span>`, o.waiting > 0)}
+        ${kpi('Đơn đang xử lý', o.processing, `<span>${money(o.processingValue)}đ</span>`)}
+        ${kpi('Khách còn nợ', money(d.debtTotal), `<span>${d.debtCount} khách</span>`, d.debtTotal > 0)}
+        ${kpi('Màu/size cần đặt Taobao', d.shortCount, '', d.shortCount > 0)}
+        ${kpi('Tổng tồn kho (cái)', d.stockQty)}
+        ${kpi('Tỷ giá mới nhất', d.rate ? money(d.rate.rate) : '—', d.rate ? `<span>ngày ${esc(d.rate.date)}</span>` : '')}
+      </div>
+    </section>
+    <section>
+      <div class="head2"><h2>Doanh thu theo tháng</h2>
+        <select id="dYear" style="width:auto">${[y0 - 2, y0 - 1, y0].map(y => `<option${y === d.year ? ' selected' : ''}>${y}</option>`).join('')}</select></div>
+      <div class="bars">${d.months.map(x => `<div class="bar"><i style="height:${Math.round(x.revenue / max * 100)}%"></i>
+        ${x === best && x.revenue ? `<span class="lbl" style="bottom:calc(${Math.round(x.revenue / max * 100)}% + 3px)">${fmtShort(x.revenue)}</span>` : ''}
+        <span class="tip">Tháng ${x.m}: doanh thu ${money(x.revenue)}đ<br>Lợi nhuận ${money(x.profit)}đ</span></div>`).join('')}</div>
+      <div class="axis">${d.months.map(x => `<span class="${x.m === curM ? 'cur' : ''}">T${x.m}</span>`).join('')}</div>
+      <details><summary>Xem bảng số liệu (doanh thu, giá vốn, chi phí, lợi nhuận)</summary>
+        <div class="tblwrap" style="margin-top:6px"><table class="mini"><tr><th>Tháng</th><th class="n">Doanh thu</th><th class="n">Lãi gộp</th><th class="n">Chi phí</th><th class="n">Lợi nhuận</th></tr>
+        ${d.months.map(x => `<tr><td>Tháng ${x.m}</td><td class="n">${money(x.revenue)}</td><td class="n">${money(x.gross)}</td><td class="n">${money(x.expense)}</td>
+          <td class="n ${x.profit < 0 ? 'neg' : ''}">${money(x.profit)}</td></tr>`).join('')}
+        <tr><th>Cả năm</th>${['revenue', 'gross', 'expense', 'profit'].map(k => `<th class="n">${money(d.months.reduce((s, x) => s + x[k], 0))}</th>`).join('')}</tr></table></div>
+      </details>
+    </section>
+    <div class="two">
+      <section><h2>Bán chạy tháng này</h2>${d.top.length ? `<table class="mini"><tr><th>Sản phẩm</th><th class="n">SL</th><th class="n">Doanh thu</th></tr>
+        ${d.top.map(p => `<tr><td>${esc(p.code)} — ${esc(p.name)}</td><td class="n">${p.qty}</td><td class="n">${money(p.value)}</td></tr>`).join('')}</table>`
+        : '<p style="color:var(--muted);font-size:13px">Chưa có đơn trong tháng.</p>'}</section>
+      <section><h2>Khách nợ nhiều nhất</h2>${d.debtors.length ? `<table class="mini">
+        ${d.debtors.map(c => `<tr><td><a href="#" class="dCust" data-code="${esc(c.code)}">${esc(c.code)} — ${esc(c.name)}</a></td>
+          <td class="n debt">${money(c.debt)}đ</td></tr>`).join('')}</table>`
+        : '<p style="color:var(--muted);font-size:13px">Không có khách nợ. ✔</p>'}</section>
+      <section><h2>Cần đặt Taobao</h2>${d.short.length ? `<table class="mini"><tr><th>Sản phẩm</th><th>Màu / size</th><th class="n">Thiếu</th></tr>
+        ${d.short.map(x => `<tr><td>${esc(x.code)} — ${esc(x.name)}</td><td>${esc(x.color)} ${esc(x.size)}</td><td class="n neg">${x.need}</td></tr>`).join('')}</table>
+        ${d.shortCount > d.short.length ? `<div style="font-size:12px;color:var(--muted);margin-top:6px">… và ${d.shortCount - d.short.length} màu/size khác (xem mục Sản phẩm, lọc "Âm kho").</div>` : ''}`
+        : '<p style="color:var(--muted);font-size:13px">Không có màu/size nào âm kho. ✔</p>'}</section>
+      <section><h2>Cảnh báo</h2>${d.warnings.length ? d.warnings.map(w => `<div style="font-size:13px;margin-bottom:6px"><b>${esc(w.label)}</b><br>
+        <span class="neg" style="font-weight:normal">${esc(w.text)}</span></div>`).join('') : '<p style="color:var(--muted);font-size:13px">Không có cảnh báo. ✔</p>'}</section>
+    </div>`;
+  $('dReload').onclick = loadDash;
+  $('dYear').onchange = () => { DASH_YEAR = +$('dYear').value; loadDash(); };
+  document.querySelectorAll('.dCust').forEach(a => a.onclick = ev => { ev.preventDefault(); showView('cust'); $('cQ').value = a.dataset.code; loadCustomer(); });
+}
+
+/* ---------------- tỷ giá ---------------- */
+let tgOldDay = '';
+function loadRates() {
+  if (!$('tgDay').value && D) $('tgDay').value = D.today;
+  run().withSuccessHandler(list => {
+    const now = list[0];
+    $('tgNow').textContent = now ? money(now.rate) : '—';
+    $('tgNowDate').textContent = now ? 'ngày ' + now.date : '';
+    $('tgList').innerHTML = list.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th>Ngày</th><th class="n">Tỷ giá</th><th>Ghi chú</th><th></th></tr></thead>
+      <tbody>${list.map(r => `<tr><td>${esc(r.date)}</td><td class="n"><b>${money(r.rate)}</b></td><td>${esc(r.note)}</td>
+        <td class="n"><span class="rowbtns" style="justify-content:flex-end"><button type="button" class="btn-ghost tgEdit" data-day="${r.day}" data-rate="${r.rate}" data-note="${esc(r.note)}">Sửa</button>
+        <button type="button" class="btn-red tgDel" data-day="${r.day}" data-date="${esc(r.date)}">Xóa</button></span></td></tr>`).join('')}</tbody></table></div>`
+      : '<p style="color:var(--muted)">Chưa có tỷ giá nào.</p>';
+    document.querySelectorAll('.tgEdit').forEach(b => b.onclick = () => {
+      tgOldDay = b.dataset.day; $('tgDay').value = b.dataset.day; $('tgRate').value = b.dataset.rate; $('tgNote').value = b.dataset.note;
+      $('tgSave').textContent = '✔ Cập nhật'; $('tgRate').focus(); window.scrollTo(0, 0);
+    });
+    document.querySelectorAll('.tgDel').forEach(b => b.onclick = () => {
+      if (confirm('Xóa tỷ giá ngày ' + b.dataset.date + '?\nCác lô nhập dùng tỷ giá này sẽ chuyển sang tỷ giá gần nhất trước đó (giá vốn có thể đổi).'))
+        act('deleteRate', [b.dataset.day], 'Đã xóa tỷ giá ngày ' + b.dataset.date + '.', loadRates);
+    });
+  }).withFailureHandler(e => showMsg('Lỗi tải tỷ giá: ' + e.message)).listRates(PIN);
+}
+$('tgSave').onclick = () => {
+  clearMsg();
+  const rate = num($('tgRate').value), day = $('tgDay').value;
+  if (!day) return showMsg('Chọn ngày.');
+  if (rate < 1000 || rate > 10000) return showMsg('Tỷ giá ' + rate + ' có vẻ sai (thường khoảng 3.000 – 4.500).');
+  const dd = day.split('-').reverse().join('/');
+  if (!confirm(`Lưu tỷ giá ${money(rate)} cho ngày ${dd}?`)) return;
+  act('saveRate', [{ day, rate, note: $('tgNote').value.trim(), oldDay: tgOldDay }],
+    r => (r.added ? 'Đã thêm' : 'Đã cập nhật') + ' tỷ giá ' + money(r.rate) + ' ngày ' + dd + '.',
+    () => { tgOldDay = ''; $('tgRate').value = ''; $('tgNote').value = ''; $('tgSave').textContent = '✔ Lưu tỷ giá'; loadRates(); });
+};
+
 load();
+loadDash();
 </script>
 </body>
 </html>
