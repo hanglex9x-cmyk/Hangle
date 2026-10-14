@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<title>Đơn hàng</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1F3A5F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{--navy:#1F3A5F;--steel:#3D6A9E;--teal:#0F9D8A;--teal-t:#E6F7F4;--line:#E2E8F0;--muted:#64748B;
+        --text:#1E293B;--bg:#F7FAFD;--red:#B91C1C;--red-t:#FEE2E2;--amber:#92400E;--amber-t:#FEF3C7;--green:#166534;--green-t:#DCFCE7}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:var(--bg);font-size:14px}
+  header{background:var(--navy);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+  header h1{font-size:18px;margin:0}
+  header .code{background:var(--teal);padding:4px 10px;border-radius:4px;font-weight:bold}
+  main{max-width:940px;margin:0 auto;padding:16px}
+  section{background:#fff;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;padding:14px;margin-bottom:14px}
+  h2{font-size:13px;text-transform:uppercase;color:var(--navy);margin:0 0 10px;letter-spacing:.3px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  input,select,textarea{width:100%;padding:9px 10px;border:1px solid #CBD5E1;border-radius:4px;font:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+  .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .tabs{display:flex;gap:6px;margin-bottom:10px}
+  .tabs button{flex:1}
+  button{font:inherit;border:0;border-radius:4px;padding:10px 14px;cursor:pointer;font-weight:bold}
+  .btn{background:var(--navy);color:#fff}
+  .btn-teal{background:var(--teal);color:#fff}
+  .btn-ghost{background:#fff;color:var(--navy);border:1px solid #CBD5E1}
+  .btn-ghost.on{background:var(--teal-t);border-color:var(--teal);color:var(--teal)}
+  .btn-x{background:var(--red-t);color:var(--red);padding:8px 10px}
+  .cust-info{margin-top:8px;font-size:12px;color:var(--muted)}
+  .item{display:grid;gap:8px;grid-template-columns:2.2fr 1fr 1fr .7fr 1fr auto;align-items:end;
+        padding:10px 0;border-bottom:1px dashed var(--line)}
+  .item .meta{grid-column:1/-1;font-size:12px;color:var(--muted)}
+  .stock-ok{color:var(--green);font-weight:bold}.stock-low{color:var(--amber);font-weight:bold}
+  @media (max-width:640px){.item{grid-template-columns:1fr 1fr}.item .pcode{grid-column:1/-1}}
+  .totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .tot{background:var(--bg);border-radius:4px;padding:10px}
+  .tot b{display:block;font-size:20px;color:var(--navy);margin-top:4px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .msg{padding:10px 12px;border-radius:4px;margin-bottom:12px;display:none}
+  .msg.err{display:block;background:var(--red-t);color:var(--red)}
+  .msg.ok{display:block;background:var(--green-t);color:var(--green)}
+  #result{display:none}
+  #result .big{font-size:22px;color:var(--navy);font-weight:bold}
+  .loading{opacity:.6;pointer-events:none}
+  textarea{min-height:70px}
+  nav{display:flex;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  nav button{flex:1;background:#fff;color:var(--muted);border-radius:0;border-bottom:3px solid transparent}
+  nav button.on{color:var(--navy);border-bottom-color:var(--teal)}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .quick button{padding:6px 10px;font-size:12px}
+  .ord{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fff}
+  .ord-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .ord-top b{color:var(--navy)}
+  .ord .items{font-size:12px;color:var(--muted);margin:6px 0}
+  .ord .money{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;align-items:center}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
+  .b-cho{background:var(--amber-t);color:var(--amber)}.b-xl{background:#DBEAFE;color:#1E40AF}
+  .b-giao{background:var(--green-t);color:var(--green)}.b-huy{background:#F1F5F9;color:#64748B;text-decoration:line-through}
+  .debt{color:var(--red);font-weight:bold}
+  .pdfbtn{padding:6px 10px;font-size:12px;margin-left:auto}
+  nav button{padding:10px 4px;font-size:13px}
+  .thumb{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--bg);flex:none}
+  .thumb.sm{width:36px;height:36px}
+  .noimg{display:flex;align-items:center;justify-content:center;color:#94A3B8;font-size:20px}
+  .item .meta{display:flex;gap:10px;align-items:flex-start}
+  .prod{display:flex;gap:12px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fff}
+  .prod .body{flex:1;min-width:0}
+  .prod .head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .prod .imgbox{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .prod .imgbox .thumb{width:72px;height:72px}
+  .linkbtn{background:none;padding:0;color:var(--steel);font-size:11px;font-weight:normal;text-decoration:underline}
+  .vt{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+  .vt th,.vt td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}
+  .vt td.n,.vt th.n{text-align:right}
+  .neg{color:var(--red);font-weight:bold}.zero{color:var(--muted)}.pos{color:var(--green);font-weight:bold}
+  .bigstock{font-size:18px;font-weight:bold}
+  .line{display:flex;gap:8px;align-items:center;font-size:12px;padding:4px 0}
+  .line.x{text-decoration:line-through;color:#94A3B8}
+  .cinfo{display:grid;gap:4px 16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));font-size:13px}
+  .cinfo span{color:var(--muted)}
+  #pinGate{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+  #pinGate form{background:#fff;border-radius:8px;padding:20px;width:100%;max-width:320px}
+  #pinGate input{font-size:22px;letter-spacing:6px;text-align:center;margin:10px 0}
+  #pinGate button{width:100%}
+  #pinMsg{color:var(--red);font-size:13px;min-height:16px}
+  #pinOut{background:none;color:#CBD5E1;font-weight:normal;font-size:12px;padding:4px 8px}
+</style>
+</head>
+<body>
+<div id="pinGate"><form id="pinForm">
+  <h2>🔒 Nhập mã PIN</h2>
+  <div style="font-size:13px;color:var(--muted)">Hỏi chủ shop để lấy mã PIN.</div>
+  <input id="pinInput" type="password" inputmode="numeric" autocomplete="off">
+  <div id="pinMsg"></div>
+  <button type="submit" class="btn-teal" style="margin-top:8px">Vào</button>
+</form></div>
+<header><h1>🧾 Tạo đơn hàng</h1><span><button type="button" id="pinOut" title="Xóa mã PIN đã nhớ trên máy này">Thoát</button>
+  <span class="code" id="orderCode">…</span></span></header>
+<nav><button type="button" class="on" id="navNew">＋ Tạo đơn</button><button type="button" id="navList">☰ Đơn theo ngày</button><button type="button" id="navStock">▦ Tồn kho</button><button type="button" id="navCust">☺ Khách hàng</button></nav>
+<main id="app" class="loading">
+  <div id="msg" class="msg"></div>
+  <input type="file" id="imgFile" accept="image/*" style="display:none">
+
+  <div id="stockView" style="display:none">
+    <section>
+      <h2>Tra cứu tồn kho theo sản phẩm</h2>
+      <div class="grid">
+        <div style="grid-column:span 2"><label>Tìm theo mã / tên sản phẩm</label><input id="sQ" placeholder="vd: SP03 hoặc legging"></div>
+        <div><label>Lọc</label><select id="sFilter">
+          <option value="">Tất cả</option><option value="pos">Còn hàng</option>
+          <option value="neg">Âm kho – cần đặt Taobao</option><option value="zero">Hết hàng / chưa nhập</option></select></div>
+        <div style="align-self:end"><button type="button" class="btn-ghost" id="sReload" style="width:100%">↻ Làm mới số liệu</button></div>
+      </div>
+    </section>
+    <div id="stockList"></div>
+  </div>
+
+  <div id="custView" style="display:none">
+    <section>
+      <h2>Chi tiết theo khách hàng</h2>
+      <div class="grid">
+        <div style="grid-column:span 2"><label>Tìm theo tên / SĐT / mã</label>
+          <input id="cQ" list="custList" placeholder="Gõ để tìm khách…"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="cGo" style="width:100%">Xem</button></div>
+      </div>
+    </section>
+    <div id="custDetail"></div>
+  </div>
+
+  <div id="listView" style="display:none">
+    <section>
+      <h2>Xem đơn theo ngày</h2>
+      <div class="grid">
+        <div><label>Từ ngày</label><input type="date" id="lFrom"></div>
+        <div><label>Đến ngày</label><input type="date" id="lTo"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="lGo" style="width:100%">Xem</button></div>
+      </div>
+      <div class="quick">
+        <button type="button" class="btn-ghost" data-r="0">Hôm nay</button>
+        <button type="button" class="btn-ghost" data-r="1">Hôm qua</button>
+        <button type="button" class="btn-ghost" data-r="7">7 ngày</button>
+        <button type="button" class="btn-ghost" data-r="m">Tháng này</button>
+      </div>
+    </section>
+    <div class="totals" style="margin-bottom:14px">
+      <div class="tot">Số đơn (hợp lệ)<b id="sCount">0</b></div>
+      <div class="tot">Tổng tiền<b id="sTotal">0</b></div>
+      <div class="tot">Đã thu<b id="sPaid">0</b></div>
+      <div class="tot">Còn nợ<b id="sDebt">0</b></div>
+    </div>
+    <div id="orderList"></div>
+  </div>
+
+  <div id="form">
+    <section>
+      <h2>Khách hàng</h2>
+      <div class="tabs">
+        <button type="button" class="btn-ghost on" id="tabOld">Khách cũ</button>
+        <button type="button" class="btn-ghost" id="tabNew">+ Khách mới</button>
+      </div>
+      <div id="oldBox">
+        <label>Tìm theo tên / SĐT / mã</label>
+        <input id="custSearch" list="custList" placeholder="Gõ để tìm khách…">
+        <datalist id="custList"></datalist>
+        <div class="cust-info" id="custInfo"></div>
+      </div>
+      <div id="newBox" style="display:none" class="grid">
+        <div><label>Tên khách *</label><input id="ncName"></div>
+        <div><label>SĐT / Zalo</label><input id="ncPhone" inputmode="tel"></div>
+        <div><label>Địa chỉ</label><input id="ncAddr"></div>
+        <div><label>Link Facebook</label><input id="ncFb"></div>
+        <div><label>Nhóm khách</label>
+          <select id="ncGroup"><option>Khách lẻ</option><option>Khách sỉ</option><option>Cộng tác viên</option></select></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Sản phẩm</h2>
+      <div id="items"></div>
+      <div style="margin-top:10px"><button type="button" class="btn-ghost" id="addItem">+ Thêm sản phẩm</button></div>
+      <datalist id="prodList"></datalist>
+      <datalist id="colorList"></datalist>
+      <datalist id="sizeList"></datalist>
+    </section>
+
+    <section>
+      <h2>Thanh toán</h2>
+      <div class="grid">
+        <div><label>Ngày đặt</label><input type="date" id="date"></div>
+        <div><label>Khách đã trả (VNĐ)</label><input id="paid" inputmode="numeric" value="0"></div>
+      </div>
+      <div style="margin-top:10px"><label>Ghi chú in lên đơn</label><textarea id="note"></textarea></div>
+      <div class="totals" style="margin-top:12px">
+        <div class="tot">Tổng tiền hàng<b id="tTotal">0</b></div>
+        <div class="tot">Đã trả<b id="tPaid">0</b></div>
+        <div class="tot">Còn lại<b id="tRemain">0</b></div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button type="button" class="btn-ghost" id="reprint">Xuất lại PDF đơn cũ…</button>
+      <button type="button" class="btn-teal" id="submit">✔ Tạo đơn</button>
+    </div>
+  </div>
+
+  <section id="result">
+    <h2>Đã tạo đơn</h2>
+    <div class="big" id="rCode"></div>
+    <div id="rInfo" style="margin:6px 0 14px;color:var(--muted)"></div>
+    <div class="actions" style="justify-content:flex-start">
+      <button type="button" class="btn" id="rPdf">📄 Tạo PDF đơn hàng</button>
+      <a id="rOpen" target="_blank"><button type="button" class="btn">Mở PDF</button></a>
+      <button type="button" class="btn-ghost" id="rDownload">Tải PDF về máy</button>
+      <button type="button" class="btn-teal" id="rCopy">Copy tin nhắn gửi khách</button>
+      <a id="rZalo" target="_blank"><button type="button" class="btn-ghost">Mở Zalo của khách</button></a>
+      <button type="button" class="btn-ghost" id="rNew">+ Tạo đơn mới</button>
+    </div>
+    <textarea id="rText" style="margin-top:12px"></textarea>
+  </section>
+</main>
+
+<script>
+let D = null, mode = 'old', lastResult = null;
+const $ = id => document.getElementById(id);
+const money = n => (Math.round(+n || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const num = s => +String(s).replace(/[^\d-]/g, '') || 0;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// Chạy trong Apps Script → dùng google.script.run. Chạy ở GitHub Pages → gọi API (doPost) của web app.
+const API_URL = 'https://script.google.com/macros/s/AKfycbwCYciJNmhKL-8ppfcZ8STvZZVGOrk4OryDcraUJ4ov0oOV3VsZDD97alXlEZ4zxgbuHw/exec';
+function run() {
+  if (window.google && google.script && google.script.run) return google.script.run;
+  let ok = () => {}, fail = () => {};
+  const r = new Proxy({}, { get: (t, fn) =>
+    fn === 'withSuccessHandler' ? (f => { ok = f; return r; }) :
+    fn === 'withFailureHandler' ? (f => { fail = f; return r; }) :
+    (...args) => fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ fn, args }) })
+      .then(res => res.json())
+      .then(j => j.ok ? ok(j.data) : fail(new Error(j.error)))
+      .catch(e => fail(new Error('Không kết nối được máy chủ (' + e.message + ')'))) });
+  return r;
+}
+
+// mã PIN cho người dùng không phải chủ shop – nhớ trên máy này
+let PIN = '';
+try { PIN = localStorage.getItem('pin') || ''; } catch (e) { /* trình duyệt chặn lưu */ }
+function askPin(text) {
+  $('pinMsg').textContent = text || '';
+  $('pinGate').style.display = 'flex'; $('pinInput').value = ''; $('pinInput').focus();
+}
+$('pinForm').onsubmit = ev => {
+  ev.preventDefault();
+  PIN = $('pinInput').value.trim();
+  try { localStorage.setItem('pin', PIN); } catch (e) { /* bỏ qua */ }
+  $('pinGate').style.display = 'none'; clearMsg(); load();
+};
+$('pinOut').onclick = () => { try { localStorage.removeItem('pin'); localStorage.removeItem('initData'); } catch (e) {} PIN = ''; askPin('Đã thoát. Nhập mã PIN để dùng lại.'); };
+
+function showMsg(text, ok) {
+  const i = String(text).indexOf('PIN:');
+  if (!ok && i >= 0) { $('app').classList.remove('loading'); try { localStorage.removeItem('initData'); } catch (e) {} return askPin(String(text).slice(i + 4).trim()); }
+  const m = $('msg'); m.textContent = text; m.className = 'msg ' + (ok ? 'ok' : 'err'); window.scrollTo(0, 0);
+}
+function clearMsg() { $('msg').className = 'msg'; }
+
+function load() {
+  if (!D) {
+    try { const c = JSON.parse(localStorage.getItem('initData') || 'null'); if (c) applyInit(c); } catch (e) { /* bỏ qua */ }
+  }
+  if (!D) $('app').classList.add('loading');
+  run().withSuccessHandler(d => {
+    try { localStorage.setItem('initData', JSON.stringify(d)); } catch (e) { /* bỏ qua */ }
+    applyInit(d);
+  }).withFailureHandler(e => { showMsg('Lỗi tải dữ liệu: ' + e.message); $('app').classList.remove('loading'); })
+    .getInitData(PIN);
+}
+
+function applyInit(d) {
+    D = d;
+    $('orderCode').textContent = d.nextOrder;
+    $('date').value = d.today;
+    $('custList').innerHTML = d.customers.map(c =>
+      `<option value="${esc(c.code)} — ${esc(c.name)}${c.phone ? ' — ' + esc(c.phone) : ''}">`).join('');
+    $('prodList').innerHTML = d.products.map(p =>
+      `<option value="${esc(p.code)} — ${esc(p.name)}">${money(p.price)}đ • tồn ${p.stock}</option>`).join('');
+    $('colorList').innerHTML = d.colors.map(c => `<option value="${esc(c)}">`).join('');
+    $('sizeList').innerHTML = d.sizes.map(c => `<option value="${esc(c)}">`).join('');
+    if (!$('items').children.length) addItem();
+    $('app').classList.remove('loading');
+    if ($('stockView').style.display !== 'none') renderStock();
+}
+
+function customer() {
+  const v = $('custSearch').value.split(' — ')[0].trim();
+  return D.customers.find(c => c.code === v || c.name === v || c.phone === v);
+}
+
+$('custSearch').addEventListener('input', () => {
+  const c = customer();
+  $('custInfo').innerHTML = c ? `<b>${esc(c.name)}</b> • ${esc(c.phone)} • ${esc(c.address)} • ${esc(c.group)}`
+    + (num(c.debt) > 0 ? ` • <span class="stock-low">Đang nợ ${esc(c.debt)}đ</span>` : '') : '';
+});
+$('tabOld').onclick = () => { mode = 'old'; $('tabOld').classList.add('on'); $('tabNew').classList.remove('on');
+  $('oldBox').style.display = ''; $('newBox').style.display = 'none'; };
+$('tabNew').onclick = () => { mode = 'new'; $('tabNew').classList.add('on'); $('tabOld').classList.remove('on');
+  $('oldBox').style.display = 'none'; $('newBox').style.display = ''; };
+
+function addItem() {
+  const div = document.createElement('div');
+  div.className = 'item';
+  div.innerHTML = `
+    <div class="pcode"><label>Sản phẩm (mã / tên)</label><input class="code" list="prodList" placeholder="Gõ mã hoặc tên sản phẩm…"></div>
+    <div><label>Màu</label><input class="color" list="colorList"></div>
+    <div><label>Size</label><input class="size" list="sizeList"></div>
+    <div><label>SL</label><input class="qty" inputmode="numeric" value="1"></div>
+    <div><label>Giảm giá (đ)</label><input class="disc" inputmode="numeric" value="0"></div>
+    <div><button type="button" class="btn-x" title="Xóa dòng">✕</button></div>
+    <div class="meta"></div>`;
+  div.querySelector('.btn-x').onclick = () => { div.remove(); recalc(); };
+  div.querySelectorAll('input').forEach(i => i.addEventListener('input', () => { fillVariants(div); recalc(); }));
+  $('items').appendChild(div);
+}
+$('addItem').onclick = addItem;
+
+// ô sản phẩm chứa "SP01 — Tên", hoặc chỉ mã, hoặc đúng tên → trả về mã
+const prodCode = v => {
+  v = String(v).split(' — ')[0].trim();
+  const p = D && D.products.find(x => x.code.toLowerCase() === v.toLowerCase() || x.name.toLowerCase() === v.toLowerCase());
+  return p ? p.code : v;
+};
+const findProd = code => D.products.find(x => x.code.toLowerCase() === String(code).toLowerCase());
+const thumb = (url, cls) => url
+  ? `<img class="thumb ${cls || ''}" src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+  : `<div class="thumb noimg ${cls || ''}">▢</div>`;
+
+function fillVariants(div) {
+  const code = prodCode(div.querySelector('.code').value);
+  const p = findProd(code);
+  const meta = div.querySelector('.meta');
+  if (!p) { meta.textContent = code ? '⚠ Mã hàng chưa có trong DANH_MUC' : ''; return; }
+  const color = div.querySelector('.color').value.trim(), size = div.querySelector('.size').value.trim();
+  const vars = D.stock.filter(s => s.code.toLowerCase() === code.toLowerCase());
+  const here = vars.find(s => s.color.toLowerCase() === color.toLowerCase() && s.size.toLowerCase() === size.toLowerCase());
+  const qty = num(div.querySelector('.qty').value);
+  let stockTxt = '';
+  if (color || size) {
+    const have = here ? here.qty : 0;
+    stockTxt = have >= qty ? ` • <span class="stock-ok">Tồn ${have} → hàng có sẵn</span>`
+                           : ` • <span class="stock-low">Tồn ${have} → sẽ là đơn ORDER (chờ hàng)</span>`;
+  }
+  const varTxt = vars.filter(v => v.color || v.size).map(v => `${v.color} ${v.size}: ${v.qty}`).join(', ');
+  meta.innerHTML = thumb(p.img, 'sm') + `<div><b>${esc(p.code)} — ${esc(p.name)}</b> • ${money(p.price)}đ${stockTxt}`
+    + (varTxt ? `<br>Đang có: ${esc(varTxt)}` : '') + '</div>';
+}
+
+function readItems() {
+  return [...document.querySelectorAll('.item')].map(d => ({
+    code: prodCode(d.querySelector('.code').value), color: d.querySelector('.color').value.trim(),
+    size: d.querySelector('.size').value.trim(), qty: num(d.querySelector('.qty').value),
+    discount: num(d.querySelector('.disc').value),
+  })).filter(i => i.code);
+}
+
+function recalc() {
+  if (!D) return;
+  const total = readItems().reduce((s, i) => {
+    const p = D.products.find(x => x.code.toLowerCase() === i.code.toLowerCase());
+    return s + (p ? p.price * i.qty - i.discount : 0);
+  }, 0);
+  const paid = num($('paid').value);
+  $('tTotal').textContent = money(total); $('tPaid').textContent = money(paid); $('tRemain').textContent = money(total - paid);
+}
+$('paid').addEventListener('input', recalc);
+
+$('submit').onclick = () => {
+  clearMsg();
+  const items = readItems();
+  if (!items.length) return showMsg('Chưa có sản phẩm nào.');
+  const bad = items.find(i => !D.products.some(p => p.code.toLowerCase() === i.code.toLowerCase()));
+  if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong DANH_MUC.');
+  if (items.some(i => i.qty <= 0)) return showMsg('Số lượng phải lớn hơn 0.');
+  const payload = { date: $('date').value, items, paid: num($('paid').value), note: $('note').value };
+  if (mode === 'old') {
+    const c = customer(); if (!c) return showMsg('Chọn khách trong danh sách, hoặc bấm "+ Khách mới".');
+    payload.customerCode = c.code;
+  } else {
+    if (!$('ncName').value.trim()) return showMsg('Nhập tên khách mới.');
+    payload.newCustomer = { name: $('ncName').value.trim(), phone: $('ncPhone').value.trim(),
+      address: $('ncAddr').value.trim(), facebook: $('ncFb').value.trim(), group: $('ncGroup').value };
+  }
+  $('app').classList.add('loading'); $('submit').textContent = 'Đang tạo đơn…';
+  run().withSuccessHandler(showResult)
+    .withFailureHandler(e => { showMsg('Không tạo được đơn: ' + e.message); done(); })
+    .createOrder(payload, PIN);
+};
+function done() { $('app').classList.remove('loading'); $('submit').innerHTML = '✔ Tạo đơn'; }
+
+$('reprint').onclick = () => {
+  const code = prompt('Nhập mã đơn cần xuất lại PDF (vd: DH001):');
+  if (!code) return;
+  $('app').classList.add('loading');
+  run().withSuccessHandler(showResult)
+    .withFailureHandler(e => { showMsg(e.message); done(); }).exportOrderPdf(code, PIN);
+};
+
+function showResult(r) {
+  done(); lastResult = r;
+  const o = r.order;
+  $('form').style.display = 'none'; $('result').style.display = 'block';
+  $('rCode').textContent = `${r.orderCode} — ${o.customer.name}`;
+  $('rInfo').innerHTML = `Tổng ${money(o.total)}đ • Đã trả ${money(o.paid)}đ • <b>Còn lại ${money(o.remain)}đ</b>`
+    + ` • ${o.lines.length} dòng hàng (đã ghi vào DON_HANG)`;
+  const hasPdf = !!r.pdfUrl;
+  $('rPdf').style.display = hasPdf ? 'none' : '';
+  $('rOpen').style.display = $('rDownload').style.display = hasPdf ? '' : 'none';
+  if (hasPdf) $('rOpen').href = r.pdfUrl;
+  const phone = String(o.customer.phone || '').replace(/\D/g, '');
+  $('rZalo').href = phone ? 'https://zalo.me/' + phone : 'https://chat.zalo.me/';
+  $('rText').value = `Chào ${o.customer.name}, shop gửi bạn đơn hàng ${r.orderCode} (${o.date}):\n`
+    + o.lines.map(l => `- ${l.name} ${l.color} ${l.size} x${l.qty}: ${money(l.amount)}đ`).join('\n')
+    + `\nTổng: ${money(o.total)}đ | Đã trả: ${money(o.paid)}đ | Còn lại: ${money(o.remain)}đ`
+    + (hasPdf ? `\nXem đơn (PDF): ${r.pdfUrl}` : '');
+  showMsg(hasPdf ? 'PDF đơn ' + r.orderCode + ' đã lưu vào Google Drive.' : 'Đã tạo đơn ' + r.orderCode + ' (đã ghi vào DON_HANG).', true);
+}
+$('rPdf').onclick = () => {
+  $('app').classList.add('loading'); $('rPdf').textContent = 'Đang tạo PDF…';
+  run().withSuccessHandler(r => { $('rPdf').textContent = '📄 Tạo PDF đơn hàng'; showResult(r); })
+    .withFailureHandler(e => { $('rPdf').textContent = '📄 Tạo PDF đơn hàng'; showMsg('Không tạo được PDF: ' + e.message); done(); })
+    .exportOrderPdf(lastResult.orderCode, PIN, $('note').value);
+};
+
+$('rDownload').onclick = () => {
+  const bytes = Uint8Array.from(atob(lastResult.pdfBase64), c => c.charCodeAt(0));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+  a.download = lastResult.pdfName; document.body.appendChild(a); a.click(); a.remove();
+};
+$('rCopy').onclick = () => {
+  const t = $('rText'); t.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(
+    () => showMsg('Đã copy tin nhắn – dán vào Zalo/Messenger để gửi khách.', true),
+    () => { document.execCommand('copy'); showMsg('Đã copy tin nhắn.', true); });
+};
+$('rNew').onclick = () => {
+  $('items').innerHTML = ''; $('note').value = ''; $('paid').value = 0; $('custSearch').value = ''; $('custInfo').innerHTML = '';
+  ['ncName','ncPhone','ncAddr','ncFb'].forEach(i => $(i).value = '');
+  $('result').style.display = 'none'; $('form').style.display = ''; clearMsg(); recalc(); load();
+};
+
+/* ---------------- xem đơn theo ngày ---------------- */
+const ymd = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const VIEWS = { new: ['form', 'navNew'], list: ['listView', 'navList'], stock: ['stockView', 'navStock'], cust: ['custView', 'navCust'] };
+function showView(v) {
+  Object.entries(VIEWS).forEach(([k, [box, nav]]) => {
+    $(box).style.display = k === v ? '' : 'none';
+    $(nav).classList.toggle('on', k === v);
+  });
+  $('result').style.display = 'none';
+  clearMsg();
+  if (v === 'list' && !$('lFrom').value) { setRange('0'); }
+  if (v === 'stock') renderStock();
+}
+$('navNew').onclick = () => showView('new');
+$('navList').onclick = () => showView('list');
+$('navStock').onclick = () => showView('stock');
+$('navCust').onclick = () => showView('cust');
+
+/* ---------------- tồn kho theo sản phẩm ---------------- */
+const qcls = q => q < 0 ? 'neg' : q === 0 ? 'zero' : 'pos';
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+
+function renderStock() {
+  if (!D) return;
+  const q = norm($('sQ').value.trim()), f = $('sFilter').value;
+  const list = D.products.filter(p => {
+    if (q && !norm(p.code + ' ' + p.name).includes(q)) return false;
+    if (f === 'pos') return p.stock > 0;
+    if (f === 'neg') return D.stock.some(s => s.code === p.code && s.qty < 0);
+    if (f === 'zero') return p.stock === 0;
+    return true;
+  });
+  $('stockList').innerHTML = list.length ? list.map(p => {
+    const vars = D.stock.filter(s => s.code === p.code && (s.color || s.size));
+    return `<div class="prod">
+      <div class="imgbox">${thumb(p.img)}<button type="button" class="linkbtn imgbtn" data-code="${esc(p.code)}">${p.img ? 'Đổi ảnh' : '+ Thêm ảnh'}</button></div>
+      <div class="body">
+        <div class="head"><span><b>${esc(p.code)}</b> — ${esc(p.name)}<br><span style="color:var(--muted);font-size:12px">Giá bán ${money(p.price)}đ</span></span>
+          <span>Tồn <span class="bigstock ${qcls(p.stock)}">${p.stock}</span></span></div>
+        ${p.warn && p.warn !== '✔' ? `<div style="font-size:12px;margin-top:4px" class="${p.warn[0] === '⚠' ? 'neg' : 'zero'}">${esc(p.warn)}</div>` : ''}
+        ${vars.length ? `<table class="vt"><tr><th>Màu</th><th>Size</th><th class="n">Đã nhập</th><th class="n">Đã bán</th><th class="n">Tồn</th></tr>
+          ${vars.map(s => `<tr><td>${esc(s.color)}</td><td>${esc(s.size)}</td><td class="n">${s.inQty}</td><td class="n">${s.outQty}</td>
+            <td class="n ${qcls(s.qty)}">${s.qty}${s.qty < 0 ? ' (cần đặt ' + -s.qty + ')' : ''}</td></tr>`).join('')}</table>`
+          : '<div style="font-size:12px;color:var(--muted);margin-top:6px">Chưa có nhập / bán theo màu-size.</div>'}
+      </div></div>`;
+  }).join('') : '<p style="color:var(--muted)">Không tìm thấy sản phẩm.</p>';
+  document.querySelectorAll('.imgbtn').forEach(b => b.onclick = () => { imgFor = b.dataset.code; $('imgFile').value = ''; $('imgFile').click(); });
+}
+$('sQ').addEventListener('input', renderStock);
+$('sFilter').onchange = renderStock;
+$('sReload').onclick = () => { load(); };
+
+// thêm / đổi ảnh: thu nhỏ còn 800px rồi gửi lên Drive + DANH_MUC
+let imgFor = '';
+function shrink(file, max, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const k = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(img, 0, 0, c.width, c.height);
+    cb(c.toDataURL('image/jpeg', 0.85));
+  };
+  img.src = URL.createObjectURL(file);
+}
+$('imgFile').onchange = () => {
+  const f = $('imgFile').files[0]; if (!f || !imgFor) return;
+  $('app').classList.add('loading');
+  shrink(f, 800, data => run().withSuccessHandler(r => {
+    const p = findProd(r.code); if (p) p.img = r.img + '&t=' + Date.now();
+    $('app').classList.remove('loading'); renderStock(); showMsg('Đã lưu ảnh cho ' + r.code + ' (DANH_MUC cột Ảnh).', true);
+  }).withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Không lưu được ảnh: ' + e.message); })
+    .saveProductImage(imgFor, data, PIN));
+};
+
+/* ---------------- chi tiết khách hàng ---------------- */
+function custFrom(v) {
+  v = String(v).split(' — ')[0].trim().toLowerCase();
+  return D.customers.find(c => c.code.toLowerCase() === v || c.name.toLowerCase() === v || c.phone === v);
+}
+$('cQ').addEventListener('change', () => { if (custFrom($('cQ').value)) loadCustomer(); });
+$('cGo').onclick = loadCustomer;
+function loadCustomer() {
+  clearMsg();
+  const c = custFrom($('cQ').value);
+  if (!c) return showMsg('Chọn khách trong danh sách gợi ý.');
+  $('app').classList.add('loading'); $('custDetail').innerHTML = '';
+  run().withSuccessHandler(r => {
+    $('app').classList.remove('loading');
+    const k = r.customer, s = r.summary, phone = String(k.phone).replace(/\D/g, '');
+    const cls = { 'Chờ hàng': 'b-cho', 'Đang xử lý': 'b-xl', 'Đã giao': 'b-giao', 'Đã hủy': 'b-huy' };
+    $('custDetail').innerHTML = `
+      <section>
+        <h2>${esc(k.code)} — ${esc(k.name)}</h2>
+        <div class="cinfo">
+          <div><span>SĐT:</span> ${esc(k.phone) || '—'} ${phone ? `• <a href="https://zalo.me/${phone}" target="_blank">Zalo</a>` : ''}</div>
+          <div><span>Nhóm:</span> ${esc(k.group) || '—'}</div>
+          <div><span>Địa chỉ:</span> ${esc(k.address) || '—'}</div>
+          <div><span>Facebook:</span> ${k.facebook ? `<a href="${esc(k.facebook)}" target="_blank">Mở ↗</a>` : '—'}</div>
+        </div>
+        ${k.warn && k.warn !== '✔' ? `<div style="margin-top:8px;font-size:12px" class="${k.warn[0] === '⚠' ? 'neg' : ''}">${esc(k.warn)}</div>` : ''}
+      </section>
+      <div class="totals" style="margin-bottom:14px">
+        <div class="tot">Số đơn<b>${s.count}</b></div><div class="tot">Số SP đã mua<b>${s.qty}</b></div>
+        <div class="tot">Tổng mua<b>${money(s.total)}</b></div><div class="tot">Đã trả<b>${money(s.paid)}</b></div>
+        <div class="tot">Còn nợ<b class="${s.debt > 0 ? 'debt' : ''}">${money(s.debt)}</b></div>
+      </div>
+      ${r.orders.length ? r.orders.map(o => `
+        <div class="ord">
+          <div class="ord-top"><span><b>${esc(o.code)}</b> • ${esc(o.date)}</span><span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span></div>
+          ${o.lines.map(l => `<div class="line ${l.cancelled ? 'x' : ''}">${thumb(l.img, 'sm')}
+            <span style="flex:1">${esc(l.code)} — ${esc(l.name)} • ${esc(l.color)} ${esc(l.size)} • x${l.qty}</span>
+            <span>${money(l.amount)}đ</span></div>`).join('')}
+          <div class="money"><span>Tổng <b>${money(o.total)}</b></span><span>Đã thu ${money(o.paid)}</span>
+            ${o.debt > 0 ? `<span class="debt">Nợ ${money(o.debt)}</span>` : ''}
+            <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button></div>
+        </div>`).join('') : '<p style="color:var(--muted)">Khách chưa có đơn nào.</p>'}`;
+    bindPdf('#custDetail', 'custView');
+  }).withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Lỗi tải khách: ' + e.message); })
+    .getCustomerDetail(c.code, PIN);
+}
+
+function bindPdf(scope, view) {
+  document.querySelectorAll(scope + ' .pdfbtn').forEach(b => b.onclick = () => {
+    $('app').classList.add('loading');
+    run().withSuccessHandler(r => { $(view).style.display = 'none'; showResult(r); })
+      .withFailureHandler(e => { showMsg(e.message); $('app').classList.remove('loading'); })
+      .exportOrderPdf(b.dataset.code, PIN);
+  });
+}
+
+function setRange(r) {
+  const t = new Date(); let f = new Date(t), to = new Date(t);
+  if (r === '1') { f.setDate(t.getDate() - 1); to = new Date(f); }
+  else if (r === '7') f.setDate(t.getDate() - 6);
+  else if (r === 'm') f = new Date(t.getFullYear(), t.getMonth(), 1);
+  $('lFrom').value = ymd(f); $('lTo').value = ymd(to); loadOrders();
+}
+document.querySelectorAll('.quick button').forEach(b => b.onclick = () => setRange(b.dataset.r));
+$('lGo').onclick = loadOrders;
+
+function loadOrders() {
+  if ($('lFrom').value > $('lTo').value) return showMsg('Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.');
+  $('app').classList.add('loading'); $('orderList').innerHTML = '';
+  run().withSuccessHandler(res => {
+    $('app').classList.remove('loading');
+    const s = res.summary;
+    $('sCount').textContent = s.valid + (s.count > s.valid ? ` (+${s.count - s.valid} hủy)` : '');
+    $('sTotal').textContent = money(s.total); $('sPaid').textContent = money(s.paid); $('sDebt').textContent = money(s.debt);
+    const cls = { 'Chờ hàng': 'b-cho', 'Đang xử lý': 'b-xl', 'Đã giao': 'b-giao', 'Đã hủy': 'b-huy' };
+    $('orderList').innerHTML = res.orders.length ? res.orders.map(o => `
+      <div class="ord">
+        <div class="ord-top"><span><b>${esc(o.code)}</b> • ${esc(o.date)} • ${esc(o.custName || o.custCode)}</span>
+          <span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span></div>
+        <div class="items">${o.items.map(esc).join(' • ')}</div>
+        <div class="money"><span>Tổng <b>${money(o.total)}</b></span><span>Đã thu ${money(o.paid)}</span>
+          ${o.debt > 0 ? `<span class="debt">Nợ ${money(o.debt)}</span>` : ''}
+          <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button></div>
+      </div>`).join('') : '<p style="color:var(--muted)">Không có đơn nào trong khoảng ngày này.</p>';
+    bindPdf('#orderList', 'listView');
+  }).withFailureHandler(e => { showMsg('Lỗi tải đơn: ' + e.message); $('app').classList.remove('loading'); })
+    .listOrders($('lFrom').value, $('lTo').value, PIN);
+}
+
+load();
+</script>
+</body>
+</html>
