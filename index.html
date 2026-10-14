@@ -93,6 +93,27 @@
   #pinGate button{width:100%}
   #pinMsg{color:var(--red);font-size:13px;min-height:16px}
   #pinOut{background:none;color:#CBD5E1;font-weight:normal;font-size:12px;padding:4px 8px}
+  #modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:flex-start;justify-content:center;z-index:15;padding:24px 16px;overflow:auto}
+  #modal form{background:#fff;border-radius:8px;padding:18px;width:100%;max-width:560px}
+  #modal .actions{margin-top:14px}
+  .full{grid-column:1/-1}
+  .rowbtns{display:flex;gap:6px;flex-wrap:wrap}
+  .rowbtns button{padding:5px 9px;font-size:12px}
+  .btn-red{background:#fff;color:var(--red);border:1px solid #FCA5A5}
+  .crow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);
+        border-radius:6px;padding:8px 12px;margin-bottom:6px;background:#fff;font-size:13px}
+  .crow .who{flex:1;min-width:180px}
+  .crow .who span{color:var(--muted);font-size:12px}
+  .head2{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+  .head2 h2{margin:0}
+  .rec{display:grid;gap:8px;grid-template-columns:2.2fr 1fr 1fr .7fr 1fr auto;align-items:end;padding:8px 0;border-bottom:1px dashed var(--line)}
+  @media (max-width:640px){.rec{grid-template-columns:1fr 1fr}.rec .pcode{grid-column:1/-1}}
+  .xnt{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+  .xnt th,.xnt td{padding:6px;border-bottom:1px solid var(--line);text-align:left}
+  .xnt th{background:var(--bg)}
+  .xnt .n{text-align:right}
+  .xnt tfoot td{font-weight:bold;border-top:2px solid var(--navy)}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
 </style>
 </head>
 <body>
@@ -103,16 +124,23 @@
   <div id="pinMsg"></div>
   <button type="submit" class="btn-teal" style="margin-top:8px">Vào</button>
 </form></div>
-<header><h1>🧾 Tạo đơn hàng</h1><span><button type="button" id="pinOut" title="Xóa mã PIN đã nhớ trên máy này">Thoát</button>
+<div id="modal"><form id="mForm">
+  <h2 id="mTitle"></h2>
+  <div id="mBody" class="grid"></div>
+  <div class="actions"><button type="button" class="btn-ghost" id="mCancel">Hủy</button>
+    <button type="submit" class="btn-teal" id="mSave">Lưu</button></div>
+</form></div>
+<header><h1>🧾 Quản lý bán hàng</h1><span><button type="button" id="pinOut" title="Xóa mã PIN đã nhớ trên máy này">Thoát</button>
   <span class="code" id="orderCode">…</span></span></header>
-<nav><button type="button" class="on" id="navNew">＋ Tạo đơn</button><button type="button" id="navList">☰ Đơn theo ngày</button><button type="button" id="navStock">▦ Tồn kho</button><button type="button" id="navCust">☺ Khách hàng</button></nav>
+<nav><button type="button" class="on" id="navNew">＋ Tạo đơn</button><button type="button" id="navList">☰ Đơn hàng</button><button type="button" id="navCust">☺ Khách</button><button type="button" id="navStock">▦ Sản phẩm</button><button type="button" id="navKho">⇅ Kho</button></nav>
 <main id="app" class="loading">
   <div id="msg" class="msg"></div>
   <input type="file" id="imgFile" accept="image/*" style="display:none">
 
   <div id="stockView" style="display:none">
     <section>
-      <h2>Tra cứu tồn kho theo sản phẩm</h2>
+      <div class="head2"><h2>Sản phẩm &amp; tồn kho</h2>
+        <button type="button" class="btn-teal" id="pAdd" style="padding:7px 12px">＋ Thêm sản phẩm</button></div>
       <div class="grid">
         <div style="grid-column:span 2"><label>Tìm theo mã / tên sản phẩm</label><input id="sQ" placeholder="vd: SP03 hoặc legging"></div>
         <div><label>Lọc</label><select id="sFilter">
@@ -126,14 +154,47 @@
 
   <div id="custView" style="display:none">
     <section>
-      <h2>Chi tiết theo khách hàng</h2>
+      <div class="head2"><h2>Khách hàng</h2>
+        <button type="button" class="btn-teal" id="cAdd" style="padding:7px 12px">＋ Thêm khách</button></div>
       <div class="grid">
         <div style="grid-column:span 2"><label>Tìm theo tên / SĐT / mã</label>
           <input id="cQ" list="custList" placeholder="Gõ để tìm khách…"></div>
-        <div style="align-self:end"><button type="button" class="btn-teal" id="cGo" style="width:100%">Xem</button></div>
+        <div style="align-self:end"><button type="button" class="btn-ghost" id="cGo" style="width:100%">Xem chi tiết</button></div>
       </div>
     </section>
     <div id="custDetail"></div>
+    <div id="custRows"></div>
+  </div>
+
+  <div id="khoView" style="display:none">
+    <section>
+      <h2>Nhập hàng vào kho</h2>
+      <div class="grid">
+        <div><label>Ngày về</label><input type="date" id="kDate"></div>
+        <div style="grid-column:span 2"><label>Ghi chú phiếu nhập</label><input id="kNote" placeholder="vd: Lô Taobao 14/10"></div>
+      </div>
+      <div id="kItems"></div>
+      <div class="actions" style="justify-content:space-between;margin-top:10px">
+        <button type="button" class="btn-ghost" id="kAddRow">+ Thêm dòng</button>
+        <button type="button" class="btn-teal" id="kSave">✔ Lưu phiếu nhập</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Giá tệ / tỷ giá / ship để trống = lấy theo DANH_MUC và TY_GIA như trong sheet.</div>
+    </section>
+    <section>
+      <h2>Báo cáo xuất – nhập – tồn</h2>
+      <div class="grid">
+        <div><label>Từ ngày</label><input type="date" id="xFrom"></div>
+        <div><label>Đến ngày</label><input type="date" id="xTo"></div>
+        <div><label>Lọc mã / tên / màu</label><input id="xQ" placeholder="vd: SP03"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="xGo" style="width:100%">Xem báo cáo</button></div>
+      </div>
+      <div class="quick">
+        <button type="button" class="btn-ghost xq" data-r="m">Tháng này</button>
+        <button type="button" class="btn-ghost xq" data-r="pm">Tháng trước</button>
+        <button type="button" class="btn-ghost xq" data-r="y">Năm nay</button>
+      </div>
+    </section>
+    <div id="xntBox"></div>
   </div>
 
   <div id="listView" style="display:none">
@@ -459,7 +520,8 @@ $('rNew').onclick = () => {
 
 /* ---------------- xem đơn theo ngày ---------------- */
 const ymd = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-const VIEWS = { new: ['form', 'navNew'], list: ['listView', 'navList'], stock: ['stockView', 'navStock'], cust: ['custView', 'navCust'] };
+const VIEWS = { new: ['form', 'navNew'], list: ['listView', 'navList'], stock: ['stockView', 'navStock'], cust: ['custView', 'navCust'],
+  kho: ['khoView', 'navKho'] };
 function showView(v) {
   Object.entries(VIEWS).forEach(([k, [box, nav]]) => {
     $(box).style.display = k === v ? '' : 'none';
@@ -469,11 +531,46 @@ function showView(v) {
   clearMsg();
   if (v === 'list' && !$('lFrom').value) { setRange('0'); }
   if (v === 'stock') renderStock();
+  if (v === 'cust') renderCusts();
+  if (v === 'kho') initKho();
 }
 $('navNew').onclick = () => showView('new');
 $('navList').onclick = () => showView('list');
 $('navStock').onclick = () => showView('stock');
 $('navCust').onclick = () => showView('cust');
+$('navKho').onclick = () => showView('kho');
+
+/* ---------------- hộp nhập liệu dùng chung (thêm / sửa) ---------------- */
+let mSubmit = null;
+function openForm(title, fields, values, onSave) {
+  $('mTitle').textContent = title;
+  $('mBody').innerHTML = fields.map(f => `<div class="${f.full ? 'full' : ''}"><label>${esc(f.label)}</label>${
+    f.opts ? `<select name="${f.k}">${f.opts.map(o => `<option${o === values[f.k] ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+           : `<input name="${f.k}" value="${esc(values[f.k] ?? '')}"${f.num ? ' inputmode="numeric"' : ''}${f.ro ? ' readonly style="background:var(--bg)"' : ''}${f.ph ? ` placeholder="${esc(f.ph)}"` : ''}>`
+  }</div>`).join('');
+  mSubmit = onSave;
+  $('modal').style.display = 'flex';
+  const first = $('mBody').querySelector('input:not([readonly]),select'); if (first) first.focus();
+}
+function closeForm() { $('modal').style.display = 'none'; mSubmit = null; }
+$('mCancel').onclick = closeForm;
+$('mForm').onsubmit = ev => {
+  ev.preventDefault();
+  const o = {}; $('mBody').querySelectorAll('[name]').forEach(i => { o[i.name] = i.value.trim(); });
+  if (mSubmit) mSubmit(o);
+};
+// gọi server có khóa màn hình + báo lỗi; xong thì tải lại dữ liệu
+function act(fnName, args, okText, after) {
+  $('app').classList.add('loading'); $('mSave').disabled = true;
+  run().withSuccessHandler(r => {
+    $('mSave').disabled = false; $('app').classList.remove('loading');
+    closeForm(); showMsg(typeof okText === 'function' ? okText(r) : okText, true); load(); if (after) after(r);
+  }).withFailureHandler(e => {
+    $('mSave').disabled = false; $('app').classList.remove('loading');
+    if ($('modal').style.display === 'flex' && !/PIN:/.test(e.message)) alert(e.message); else { closeForm(); showMsg(e.message); }
+  })
+    [fnName](...args, PIN);
+}
 
 /* ---------------- tồn kho theo sản phẩm ---------------- */
 const qcls = q => q < 0 ? 'neg' : q === 0 ? 'zero' : 'pos';
@@ -492,7 +589,9 @@ function renderStock() {
   $('stockList').innerHTML = list.length ? list.map(p => {
     const vars = D.stock.filter(s => s.code === p.code && (s.color || s.size));
     return `<div class="prod">
-      <div class="imgbox">${thumb(p.img)}<button type="button" class="linkbtn imgbtn" data-code="${esc(p.code)}">${p.img ? 'Đổi ảnh' : '+ Thêm ảnh'}</button></div>
+      <div class="imgbox">${thumb(p.img)}<button type="button" class="linkbtn imgbtn" data-code="${esc(p.code)}">${p.img ? 'Đổi ảnh' : '+ Thêm ảnh'}</button>
+        <button type="button" class="linkbtn pEdit" data-code="${esc(p.code)}">Sửa</button>
+        <button type="button" class="linkbtn pDel" data-code="${esc(p.code)}" style="color:var(--red)">Xóa</button></div>
       <div class="body">
         <div class="head"><span><b>${esc(p.code)}</b> — ${esc(p.name)}<br><span style="color:var(--muted);font-size:12px">Giá bán ${money(p.price)}đ</span></span>
           <span>Tồn <span class="bigstock ${qcls(p.stock)}">${p.stock}</span></span></div>
@@ -504,7 +603,26 @@ function renderStock() {
       </div></div>`;
   }).join('') : '<p style="color:var(--muted)">Không tìm thấy sản phẩm.</p>';
   document.querySelectorAll('.imgbtn').forEach(b => b.onclick = () => { imgFor = b.dataset.code; $('imgFile').value = ''; $('imgFile').click(); });
+  document.querySelectorAll('.pEdit').forEach(b => b.onclick = () => productForm(findProd(b.dataset.code)));
+  document.querySelectorAll('.pDel').forEach(b => b.onclick = () => {
+    if (confirm('Xóa sản phẩm ' + b.dataset.code + ' khỏi danh mục?\n(Chỉ xóa được khi chưa có đơn bán / phiếu nhập nào dùng mã này.)'))
+      act('deleteProduct', [b.dataset.code], 'Đã xóa sản phẩm ' + b.dataset.code + '.');
+  });
 }
+const PROD_FIELDS = isNew => [
+  { k: 'code', label: 'Mã hàng *', ro: !isNew, ph: 'vd: SP08' }, { k: 'name', label: 'Tên sản phẩm *' },
+  { k: 'price', label: 'Giá bán (VNĐ)', num: 1 }, { k: 'priceCny', label: 'Giá nhập (tệ)', num: 1 },
+  { k: 'ship', label: 'Ship + phí DV /sp (VNĐ)', num: 1 }, { k: 'link', label: 'Link Taobao', full: 1 },
+];
+function productForm(p) {
+  const isNew = !p;
+  openForm(isNew ? 'Thêm sản phẩm' : 'Sửa sản phẩm ' + p.code, PROD_FIELDS(isNew), p || {}, o => {
+    if (!o.code || !o.name) return alert('Cần nhập mã hàng và tên sản phẩm.');
+    o.isNew = isNew; ['price', 'priceCny', 'ship'].forEach(k => { o[k] = o[k] === '' ? '' : num(o[k]); });
+    act('saveProduct', [o], r => 'Đã lưu sản phẩm ' + r.code + (isNew ? '. Bấm "+ Thêm ảnh" để thêm ảnh.' : '.'));
+  });
+}
+$('pAdd').onclick = () => productForm(null);
 $('sQ').addEventListener('input', renderStock);
 $('sFilter').onchange = renderStock;
 $('sReload').onclick = () => { load(); };
@@ -539,12 +657,46 @@ function custFrom(v) {
   return D.customers.find(c => c.code.toLowerCase() === v || c.name.toLowerCase() === v || c.phone === v);
 }
 $('cQ').addEventListener('change', () => { if (custFrom($('cQ').value)) loadCustomer(); });
+$('cQ').addEventListener('input', () => { $('custDetail').innerHTML = ''; renderCusts(); });
+function renderCusts() {
+  if (!D) return;
+  const q = norm($('cQ').value.split(' — ')[0].trim());
+  const list = D.customers.filter(c => !q || norm(c.code + ' ' + c.name + ' ' + c.phone).includes(q));
+  $('custRows').innerHTML = list.length ? list.map(c => `
+    <div class="crow"><div class="who"><b>${esc(c.code)}</b> — ${esc(c.name)}<br>
+      <span>${esc(c.phone) || 'chưa có SĐT'} • ${esc(c.group)} • mua ${esc(c.total || '0')}đ${num(c.debt) > 0 ? ` • <b class="debt">nợ ${esc(c.debt)}đ</b>` : ''}</span></div>
+      <div class="rowbtns"><button type="button" class="btn-ghost cView" data-code="${esc(c.code)}">Xem</button>
+        <button type="button" class="btn-ghost cEdit" data-code="${esc(c.code)}">Sửa</button>
+        <button type="button" class="btn-red cDel" data-code="${esc(c.code)}">Xóa</button></div></div>`).join('')
+    : '<p style="color:var(--muted)">Không tìm thấy khách.</p>';
+  const byCode = code => D.customers.find(c => c.code === code);
+  document.querySelectorAll('.cView').forEach(b => b.onclick = () => { $('cQ').value = b.dataset.code; loadCustomer(); });
+  document.querySelectorAll('.cEdit').forEach(b => b.onclick = () => customerForm(byCode(b.dataset.code)));
+  document.querySelectorAll('.cDel').forEach(b => b.onclick = () => {
+    if (confirm('Xóa khách ' + b.dataset.code + '?\n(Chỉ xóa được khi khách chưa có đơn hàng nào.)'))
+      act('deleteCustomer', [b.dataset.code], 'Đã xóa khách ' + b.dataset.code + '.', renderCusts);
+  });
+}
+const GROUPS = ['Khách lẻ', 'Khách sỉ', 'Cộng tác viên'];
+function customerForm(c) {
+  const isNew = !c;
+  openForm(isNew ? 'Thêm khách hàng' : 'Sửa khách ' + c.code, [
+    { k: 'name', label: 'Tên khách *' }, { k: 'phone', label: 'SĐT / Zalo', num: 1 },
+    { k: 'group', label: 'Nhóm khách', opts: GROUPS }, { k: 'address', label: 'Địa chỉ' },
+    { k: 'facebook', label: 'Link Facebook', full: 1 },
+  ], c || { group: 'Khách lẻ' }, o => {
+    if (!o.name) return alert('Nhập tên khách.');
+    if (!isNew) o.code = c.code;
+    act('saveCustomer', [o], r => 'Đã lưu khách ' + r.code + '.', renderCusts);
+  });
+}
+$('cAdd').onclick = () => customerForm(null);
 $('cGo').onclick = loadCustomer;
 function loadCustomer() {
   clearMsg();
   const c = custFrom($('cQ').value);
   if (!c) return showMsg('Chọn khách trong danh sách gợi ý.');
-  $('app').classList.add('loading'); $('custDetail').innerHTML = '';
+  $('app').classList.add('loading'); $('custDetail').innerHTML = ''; $('custRows').innerHTML = '';
   run().withSuccessHandler(r => {
     $('app').classList.remove('loading');
     const k = r.customer, s = r.summary, phone = String(k.phone).replace(/\D/g, '');
@@ -596,7 +748,7 @@ function setRange(r) {
   else if (r === 'm') f = new Date(t.getFullYear(), t.getMonth(), 1);
   $('lFrom').value = ymd(f); $('lTo').value = ymd(to); loadOrders();
 }
-document.querySelectorAll('.quick button').forEach(b => b.onclick = () => setRange(b.dataset.r));
+document.querySelectorAll('#listView .quick button').forEach(b => b.onclick = () => setRange(b.dataset.r));
 $('lGo').onclick = loadOrders;
 
 function loadOrders() {
@@ -615,11 +767,92 @@ function loadOrders() {
         <div class="items">${o.items.map(esc).join(' • ')}</div>
         <div class="money"><span>Tổng <b>${money(o.total)}</b></span><span>Đã thu ${money(o.paid)}</span>
           ${o.debt > 0 ? `<span class="debt">Nợ ${money(o.debt)}</span>` : ''}
-          <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button></div>
+          <span class="rowbtns" style="margin-left:auto">${o.status === 'Đã giao' || o.status === 'Đã hủy'
+            ? `<button type="button" class="btn-ghost stBtn" data-code="${esc(o.code)}" data-a="mo">↺ Mở lại</button>`
+            : `<button type="button" class="btn-teal stBtn" data-code="${esc(o.code)}" data-a="giao">✔ Đã giao</button>
+               <button type="button" class="btn-red stBtn" data-code="${esc(o.code)}" data-a="huy">✕ Hủy</button>`}
+          <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button></span></div>
       </div>`).join('') : '<p style="color:var(--muted)">Không có đơn nào trong khoảng ngày này.</p>';
     bindPdf('#orderList', 'listView');
+    const ask = { giao: 'Đánh dấu đơn %s ĐÃ GIAO (ghi ngày giao hôm nay, dòng đơn sẽ tự ẩn trong Sheet)?',
+      huy: 'HỦY đơn %s? (hàng được cộng lại vào kho)', mo: 'Mở lại đơn %s (xóa ngày giao / hủy)?' };
+    document.querySelectorAll('#orderList .stBtn').forEach(b => b.onclick = () => {
+      if (confirm(ask[b.dataset.a].replace('%s', b.dataset.code)))
+        act('setOrderStatus', [b.dataset.code, b.dataset.a], 'Đã cập nhật đơn ' + b.dataset.code + '.', loadOrders);
+    });
   }).withFailureHandler(e => { showMsg('Lỗi tải đơn: ' + e.message); $('app').classList.remove('loading'); })
     .listOrders($('lFrom').value, $('lTo').value, PIN);
+}
+
+/* ---------------- kho: nhập hàng + xuất – nhập – tồn ---------------- */
+function initKho() {
+  if (!$('kDate').value && D) $('kDate').value = D.today;
+  if (!$('kItems').children.length) addRecRow();
+  if (!$('xFrom').value) xRange('m');
+}
+function addRecRow() {
+  const div = document.createElement('div');
+  div.className = 'rec';
+  div.innerHTML = `
+    <div class="pcode"><label>Sản phẩm (mã / tên)</label><input class="code" list="prodList" placeholder="Gõ mã hoặc tên…"></div>
+    <div><label>Màu</label><input class="color" list="colorList"></div>
+    <div><label>Size</label><input class="size" list="sizeList"></div>
+    <div><label>SL</label><input class="qty" inputmode="numeric" value="1"></div>
+    <div><label>Giá tệ (tùy chọn)</label><input class="cny" inputmode="decimal"></div>
+    <div><button type="button" class="btn-x" title="Xóa dòng">✕</button></div>`;
+  div.querySelector('.btn-x').onclick = () => div.remove();
+  $('kItems').appendChild(div);
+}
+$('kAddRow').onclick = addRecRow;
+$('kSave').onclick = () => {
+  clearMsg();
+  const items = [...document.querySelectorAll('#kItems .rec')].map(d => ({
+    code: prodCode(d.querySelector('.code').value), color: d.querySelector('.color').value.trim(),
+    size: d.querySelector('.size').value.trim(), qty: num(d.querySelector('.qty').value),
+    priceCny: d.querySelector('.cny').value.trim() === '' ? '' : +d.querySelector('.cny').value.replace(',', '.') || 0,
+  })).filter(i => i.code);
+  if (!items.length) return showMsg('Phiếu nhập chưa có sản phẩm.');
+  const bad = items.find(i => !findProd(i.code));
+  if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong danh mục – thêm ở mục Sản phẩm trước.');
+  if (items.some(i => i.qty <= 0)) return showMsg('Số lượng nhập phải lớn hơn 0.');
+  const total = items.reduce((s, i) => s + i.qty, 0);
+  if (!confirm(`Lưu phiếu nhập ${items.length} dòng, tổng ${total} sản phẩm, ngày ${$('kDate').value}?`)) return;
+  act('addReceipt', [{ date: $('kDate').value, note: $('kNote').value.trim(), items }],
+    r => `Đã nhập kho ${r.rows} dòng (NHAP_HANG từ dòng ${r.start}).`,
+    () => { $('kItems').innerHTML = ''; $('kNote').value = ''; addRecRow(); });
+};
+
+function xRange(r) {
+  const t = new Date(); let f, to = new Date(t);
+  if (r === 'm') f = new Date(t.getFullYear(), t.getMonth(), 1);
+  else if (r === 'pm') { f = new Date(t.getFullYear(), t.getMonth() - 1, 1); to = new Date(t.getFullYear(), t.getMonth(), 0); }
+  else f = new Date(t.getFullYear(), 0, 1);
+  $('xFrom').value = ymd(f); $('xTo').value = ymd(to); loadXnt();
+}
+document.querySelectorAll('.xq').forEach(b => b.onclick = () => xRange(b.dataset.r));
+$('xGo').onclick = loadXnt;
+let XNT = null;
+function loadXnt() {
+  if ($('xFrom').value > $('xTo').value) return showMsg('Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.');
+  $('app').classList.add('loading');
+  run().withSuccessHandler(r => { $('app').classList.remove('loading'); XNT = r; renderXnt(); })
+    .withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Lỗi báo cáo: ' + e.message); })
+    .stockReport($('xFrom').value, $('xTo').value, PIN);
+}
+$('xQ').addEventListener('input', () => XNT && renderXnt());
+function renderXnt() {
+  const q = norm($('xQ').value.trim());
+  const rows = XNT.rows.filter(r => !q || norm([r.code, r.name, r.color, r.size].join(' ')).includes(q));
+  const sum = f => rows.reduce((s, r) => s + r[f], 0);
+  $('xntBox').innerHTML = rows.length ? `<div class="tblwrap"><table class="xnt">
+    <thead><tr><th>Mã</th><th>Tên sản phẩm</th><th>Màu</th><th>Size</th><th class="n">Tồn đầu</th><th class="n">Nhập</th>
+      <th class="n">Xuất (bán)</th><th class="n">Tồn cuối</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(r.color)}</td><td>${esc(r.size)}</td>
+      <td class="n">${r.open}</td><td class="n">${r.in || ''}</td><td class="n">${r.out || ''}</td>
+      <td class="n ${qcls(r.close)}">${r.close}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td colspan="4">Cộng (${rows.length} dòng)</td><td class="n">${sum('open')}</td><td class="n">${sum('in')}</td>
+      <td class="n">${sum('out')}</td><td class="n">${sum('close')}</td></tr></tfoot></table></div>`
+    : '<p style="color:var(--muted)">Không có số liệu trong kỳ này.</p>';
 }
 
 load();
