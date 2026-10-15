@@ -278,7 +278,10 @@
   .wo .who a{color:var(--info)}
   .wo table{margin-top:6px}
   /* ---- Tạo đơn kiểu POS: sản phẩm trái, giỏ hàng phải ---- */
-  body.wide main{max-width:1500px}
+  body.wide main{max-width:none}
+  .ordtbl .its{display:flex;flex-direction:column;gap:6px;min-width:240px}
+  .ordtbl .it{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--fg)}
+  .ordtbl .it .thumb{width:44px;height:44px}
   .pos2{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:18px;align-items:start}
   .posL #posQ{width:100%;margin-bottom:12px}
   .pos2 .tiles{max-height:none;overflow:visible;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
@@ -616,6 +619,7 @@ function applyInit(d) {
     $('app').classList.remove('loading');
     if ($('stockView').style.display !== 'none') renderStock();
     if ($('form').style.display !== 'none') renderPos();
+    if (typeof LAST_ORDERS !== 'undefined' && LAST_ORDERS && $('listView').style.display !== 'none') renderOrders();
 }
 
 function customer() {
@@ -844,7 +848,7 @@ function showView(v) {
   if (v === 'list' && !$('lFrom').value) { setRange('open'); }
   if (v === 'stock') renderStock();
   if (v === 'new') renderPos();
-  document.body.classList.toggle('wide', v === 'new');
+  document.body.classList.toggle('wide', v === 'new' || v === 'list');
   if (v === 'cust') renderCusts();
   if (v === 'kho') { if (!STAFF) initKho(); renderTon(); }
   if (v === 'report') initReport();
@@ -1167,6 +1171,15 @@ $('lCsv').onclick = () => dlCsv('DonHang_' + $('lFrom').value + '_' + $('lTo').v
   ['Mã đơn', 'Ngày', 'Mã KH', 'Khách', 'Sản phẩm', 'SL', 'Tổng', 'Đã thu', 'Còn nợ', 'Trạng thái'],
   LAST_SHOWN.map(o => [o.code, o.date, o.custCode, o.custName, o.items.join('; '), o.qty, o.total, o.paid, o.debt, o.status]));
 $('lShowDone').onchange = () => LAST_ORDERS && renderOrders();
+// dòng hàng dạng "Tên SP (hoặc mã) màu size xN" → ảnh + chữ
+function itemCell(t) {
+  let best = null;
+  if (D) D.products.forEach(p => {
+    const k = [p.name, p.code].find(k => k && t.toLowerCase().startsWith(k.toLowerCase() + ' '));
+    if (k && (!best || k.length > best.k.length)) best = { p, k };
+  });
+  return `<div class="it">${thumb(best ? best.p.img : '', 'sm')}<span>${best && best.k !== best.p.code ? `<b>${esc(best.p.code)}</b> ` : ''}${esc(t)}</span></div>`;
+}
 function renderOrders() {
     const res = LAST_ORDERS, s = res.summary;
     const showDone = $('lShowDone').checked;
@@ -1185,7 +1198,7 @@ function renderOrders() {
       + (shown.length ? `<div class="tblwrap"><table class="xnt ordtbl"><thead><tr><th>Mã</th><th>Ngày</th><th>Khách</th><th>Sản phẩm</th>
           <th class="n">SL</th><th class="n">Tổng</th><th class="n">Đã thu</th><th class="n">Còn nợ</th><th>Trạng thái</th><th></th></tr></thead><tbody>
         ${shown.map(o => `<tr><td><b>${esc(o.code)}</b></td><td>${esc(o.date)}</td><td>${esc(o.custName || o.custCode)}<br><span style="font-size:12px;color:var(--muted)">${esc(o.custCode)}</span></td>
-          <td style="font-size:13px;color:var(--muted);max-width:260px">${o.items.map(esc).join('<br>')}</td><td class="n">${o.qty}</td>
+          <td><div class="its">${o.items.map(itemCell).join('')}</div></td><td class="n">${o.qty}</td>
           <td class="n">${money(o.total)}</td><td class="n">${money(o.paid)}</td><td class="n" style="color:${o.debt > 0 ? 'var(--bad)' : 'inherit'}">${money(o.debt)}</td>
           <td><span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span><br><select class="stSel" data-code="${esc(o.code)}" aria-label="Đổi trạng thái">${opts(o)}</select></td>
           <td><button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}" style="padding:4px 10px;font-size:13px">PDF</button></td></tr>`).join('')}
