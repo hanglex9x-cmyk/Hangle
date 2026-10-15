@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop quần áo Taobao</title>
+<meta name="description" content="Hàng order Taobao & hàng có sẵn giao ngay – đặt hàng online, shop gọi xác nhận.">
+<meta name="theme-color" content="#e2405a">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#f7f5f3;--panel:#fff;--fg:#1f1b18;--muted:#6f6760;--line:#ebe5df;--accent:#e2405a;--accent-d:#c42e47;--accent-fg:#fff;--soft:#fdeef1;
+--ok:#1f7a4d;--ok-soft:#e2f3ea;--warn:#a35d00;--warn-soft:#fdf0dc;--bad:#b3261e;--bad-soft:#fbe4e2;--info:#1f5fa8;--info-soft:#e4eefa;
+--shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#151311;--panel:#1f1c19;--fg:#efe9e3;--muted:#a69d94;--line:#35302b;--accent:#ff6b82;--accent-d:#ff8597;--accent-fg:#1a0a0d;
+--soft:#3a1d23;--ok:#5fd09a;--ok-soft:#173a29;--warn:#ffb85c;--warn-soft:#3b2a12;--bad:#ff8a80;--bad-soft:#3e1c19;--info:#8cbcff;--info-soft:#1a2a40;--shadow:none}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.promo{background:linear-gradient(90deg,var(--accent-d),var(--accent));color:#fff;font-size:13.5px}
+.promo .wrap{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;padding:7px 16px}
+.promo button{background:none;border:0;color:#fff;cursor:pointer;text-decoration:underline;font-size:13.5px;padding:0}
+header{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header .wrap{display:flex;gap:14px;align-items:center;padding:12px 16px}
+.logo{display:flex;gap:10px;align-items:center;font-weight:800;font-size:19px;white-space:nowrap;cursor:pointer}
+.logo i{width:42px;height:42px;border-radius:12px;background:var(--accent);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:16px}
+.search{flex:1;position:relative}
+.search input{width:100%;padding:10px 14px 10px 38px;border:1px solid var(--line);border-radius:99px;background:var(--bg)}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+.cartbtn{display:flex;gap:8px;align-items:center;background:var(--accent);color:var(--accent-fg);border:0;border-radius:99px;padding:9px 16px;cursor:pointer;font-weight:700}
+.cartbtn b{background:var(--accent-fg);color:var(--accent);border-radius:99px;min-width:22px;padding:0 6px;font-size:13px;text-align:center}
+.hero{background:linear-gradient(120deg,#2a1b1f,#4a2430 55%,#7a2c3e);color:#fff}
+.hero .wrap{padding:44px 16px 40px}
+.hero h1{font-size:clamp(26px,4vw,40px);line-height:1.15;margin:0 0 12px;max-width:720px}
+.hero p{max-width:640px;opacity:.88;margin:0 0 22px}
+.hero .ctas{display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:10px 18px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;font-weight:600;white-space:nowrap}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+.btn.sm{padding:6px 12px;font-size:13.5px}
+.perks{display:flex;gap:22px;flex-wrap:wrap;margin-top:26px;font-size:14px;opacity:.9}
+.perks span::before{content:'✓ ';color:#ffb3c0}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:22px 0 14px}
+.bar .grow{flex:1}
+.chip{padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:600;font-size:14px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+select{padding:8px 12px;border:1px solid var(--line);border-radius:99px;background:var(--panel)}
+.count{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;margin-bottom:40px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s}
+.card:hover{transform:translateY(-2px)}
+.card .img{aspect-ratio:1/1;background:var(--soft);position:relative;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:42px}
+.card .img img{width:100%;height:100%;object-fit:cover;display:block}
+.card .badge{position:absolute;left:10px;top:10px}
+.card .b{padding:11px 13px 13px;display:flex;flex-direction:column;gap:4px;flex:1}
+.card .code{font-size:12px;color:var(--muted)}
+.card .name{font-weight:600;line-height:1.3}
+.card .row{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px}
+.card .price{font-weight:800;color:var(--accent);font-size:18px}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.t-ok{background:var(--ok-soft);color:var(--ok)} .t-warn{background:var(--warn-soft);color:var(--warn)} .t-info{background:var(--info-soft);color:var(--info)} .t-mute{background:var(--bg);color:var(--muted)}
+.meta{font-size:12.5px;color:var(--muted)}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-start;justify-content:center;padding:4vh 14px;z-index:50;overflow:auto}
+.modal.show{display:flex}
+.mbox{background:var(--panel);border-radius:18px;width:min(780px,100%);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mbox h2{margin:0 0 12px;font-size:20px}
+.pd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px}
+.pd .pv{aspect-ratio:1/1;border-radius:14px;background:var(--soft);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--muted)}
+.pd .pv img{width:100%;height:100%;object-fit:cover}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.opt{padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:14px}
+.opt.on{border-color:var(--accent);background:var(--soft);color:var(--accent);font-weight:700}
+.opt.no{opacity:.75}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);margin-bottom:10px}
+label.f input,label.f textarea{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);font-size:15px}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:18px}
+.qty input{width:56px;text-align:center;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--panel);z-index:40;box-shadow:-10px 0 40px rgba(0,0,0,.2);transform:translateX(105%);transition:transform .25s;display:flex;flex-direction:column}
+.drawer.show{transform:none}
+.drawer .hd{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line)}
+.drawer .bd{flex:1;overflow:auto;padding:12px 18px}
+.drawer .ft{border-top:1px solid var(--line);padding:14px 18px}
+.ci{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.ci .im{width:64px;height:64px;border-radius:10px;background:var(--soft);overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.ci .im img{width:100%;height:100%;object-fit:cover}
+.ci .x{background:none;border:0;color:var(--bad);cursor:pointer;font-size:13px}
+.sum{display:flex;justify-content:space-between;font-size:17px;margin:4px 0 10px}
+.sum b{color:var(--accent);font-size:20px}
+.shade{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:39;display:none}
+.shade.show{display:block}
+.note{font-size:13px;color:var(--muted)}
+.okbox{background:var(--ok-soft);color:var(--ok);border-radius:12px;padding:14px;text-align:center}
+.okbox .big{font-size:26px;font-weight:800;letter-spacing:1px;margin:4px 0}
+.errbox{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:8px 12px;font-size:14px;margin:8px 0;display:none}
+.tl{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+.tl td{padding:6px 4px;border-bottom:1px solid var(--line)}
+.tl td.n{text-align:right;white-space:nowrap}
+footer{background:var(--panel);border-top:1px solid var(--line);margin-top:20px}
+footer .wrap{padding:22px 16px;display:flex;gap:24px;flex-wrap:wrap;justify-content:space-between;font-size:14px;color:var(--muted)}
+footer b{color:var(--fg)}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:60;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.skel{background:linear-gradient(90deg,var(--line),var(--bg),var(--line));background-size:200% 100%;animation:sk 1.2s infinite;border-radius:16px;aspect-ratio:3/4}
+@keyframes sk{to{background-position:-200% 0}}
+@media (max-width:720px){.pd{grid-template-columns:1fr}.logo span{display:none}header .wrap{gap:10px}.hero .wrap{padding:30px 16px}}
+</style>
+</head>
+<body>
+<div class="promo" id="promo" style="display:none"><div class="wrap"><span id="promoText"></span><button type="button" onclick="openTrack()">Tra cứu đơn</button></div></div>
+<header><div class="wrap">
+  <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i id="logoI">TB</i><span id="shopName">Shop</span></div>
+  <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" placeholder="Tìm sản phẩm, mã hàng…" aria-label="Tìm sản phẩm"></div>
+  <button type="button" class="cartbtn" onclick="openCart()" aria-label="Giỏ hàng"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><b id="cartN">0</b></button>
+</div></header>
+
+<section class="hero"><div class="wrap">
+  <h1 id="heroTitle">Quần áo order Taobao &amp; hàng có sẵn</h1>
+  <p id="heroText"></p>
+  <div class="ctas"><button type="button" class="btn pri" onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">Xem sản phẩm</button>
+    <button type="button" class="btn ghost" onclick="openTrack()">Tra cứu đơn đã đặt</button></div>
+  <div class="perks"><span>Hàng sẵn kho giao ngay</span><span id="perkLead">Order Taobao 7–12 ngày</span><span>Shop gọi xác nhận trước khi giao</span></div>
+</div></section>
+
+<main class="wrap" id="shop">
+  <div class="bar">
+    <button type="button" class="chip on" data-f="">Tất cả</button>
+    <button type="button" class="chip" data-f="stock">Sẵn kho</button>
+    <button type="button" class="chip" data-f="order">Hàng order</button>
+    <span class="grow"></span>
+    <span class="count" id="count"></span>
+    <select id="sort" aria-label="Sắp xếp"><option value="">Mới nhất</option><option value="sold">Bán chạy</option><option value="asc">Giá thấp → cao</option><option value="desc">Giá cao → thấp</option></select>
+  </div>
+  <div class="grid" id="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+</main>
+
+<footer><div class="wrap">
+  <div><b id="fName">Shop</b><br><span id="fAddr"></span></div>
+  <div id="fContact"></div>
+  <div class="note">Giá và tình trạng hàng cập nhật từ kho của shop. Đặt hàng online → shop gọi xác nhận rồi mới giao.</div>
+</div></footer>
+
+<div class="shade" id="shade" onclick="closeCart()"></div>
+<aside class="drawer" id="drawer" aria-label="Giỏ hàng">
+  <div class="hd"><b style="font-size:18px">Giỏ hàng</b><button type="button" class="btn sm" onclick="closeCart()">Đóng</button></div>
+  <div class="bd" id="cartBody"></div>
+  <div class="ft" id="cartFoot"></div>
+</aside>
+<div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
+<div id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwCYciJNmhKL-8ppfcZ8STvZZVGOrk4OryDcraUJ4ov0oOV3VsZDD97alXlEZ4zxgbuHw/exec';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const vnd = n => new Intl.NumberFormat('vi-VN').format(Math.round(+n || 0)) + ' đ';
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* bỏ qua */ } } };
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600); }
+async function api(fn, ...args) {
+  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error);
+  return j.data;
+}
+
+let C = ls.get('shop_cat', null), F = '', CART = ls.get('shop_cart', []);
+const saveCart = () => { ls.set('shop_cart', CART); $('cartN').textContent = CART.reduce((s, i) => s + i.qty, 0); };
+const prod = code => C && C.products.find(p => p.code === code);
+const imgTag = (u, alt) => u ? `<img src="${esc(u)}" alt="${esc(alt || '')}" loading="lazy" referrerpolicy="no-referrer">` : '▢';
+const lead = () => (C && C.shop.lead) || '7–12 ngày';
+const avail = (p, c, z) => p.variants.some(v => v.stock && (!c || v.color === c) && (!z || v.size === z));
+
+/* ---------------- tải danh mục ---------------- */
+function applyShop() {
+  const s = C.shop;
+  document.title = s.name + ' – Quần áo order Taobao & hàng có sẵn';
+  $('shopName').textContent = s.name; $('fName').textContent = s.name;
+  $('logoI').textContent = s.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'S';
+  $('heroTitle').textContent = s.name + ' – quần áo order Taobao & hàng có sẵn';
+  $('heroText').textContent = s.intro || '';
+  $('perkLead').textContent = 'Order Taobao ' + lead();
+  if (s.promo) { $('promo').style.display = ''; $('promoText').textContent = s.promo; }
+  $('fAddr').textContent = s.address || '';
+  const ph = String(s.phone || '').replace(/\D/g, '');
+  $('fContact').innerHTML = (ph ? `Điện thoại / Zalo: <a href="tel:${ph}"><b>${esc(s.phone)}</b></a> · <a href="https://zalo.me/${ph}" target="_blank" rel="noopener">Nhắn Zalo</a><br>` : '')
+    + (s.web ? `<a href="${esc(s.web)}" target="_blank" rel="noopener">${esc(s.web)}</a>` : '');
+  render();
+}
+async function loadCatalog() {
+  if (C) applyShop();
+  try { C = await api('shopCatalog'); ls.set('shop_cat', C); applyShop(); }
+  catch (e) { if (!C) $('grid').innerHTML = `<div class="empty">Không tải được danh sách sản phẩm (${esc(e.message)}). Vui lòng tải lại trang.</div>`; }
+}
+
+/* ---------------- danh sách ---------------- */
+function render() {
+  if (!C) return;
+  const q = norm($('q').value.trim()), sort = $('sort').value;
+  let ps = C.products.filter(p => (!q || norm(p.code + ' ' + p.name).includes(q)) && (!F || (F === 'stock' ? p.inStock : !p.inStock)));
+  if (sort === 'asc') ps.sort((a, b) => a.price - b.price);
+  else if (sort === 'desc') ps.sort((a, b) => b.price - a.price);
+  else if (sort === 'sold') ps.sort((a, b) => b.sold - a.sold);
+  else ps = ps.slice().reverse();
+  $('count').textContent = ps.length + ' sản phẩm';
+  $('grid').innerHTML = ps.length ? ps.map(p => `<div class="card" data-code="${esc(p.code)}" tabindex="0" role="button" aria-label="${esc(p.name)}">
+      <div class="img">${imgTag(p.img, p.name)}<span class="badge tag ${p.inStock ? 't-ok' : 't-info'}">${p.inStock ? 'Sẵn kho · giao ngay' : 'Order ' + esc(lead())}</span></div>
+      <div class="b"><span class="code">${esc(p.code)}</span><span class="name">${esc(p.name)}</span>
+        ${p.sold ? `<span class="meta">Đã bán ${p.sold}</span>` : ''}
+        <div class="row"><span class="price">${vnd(p.price)}</span><button type="button" class="btn pri sm">Mua</button></div></div></div>`).join('')
+    : '<div class="empty" style="grid-column:1/-1">Không tìm thấy sản phẩm phù hợp.</div>';
+  document.querySelectorAll('.card').forEach(c => { c.onclick = () => openProduct(c.dataset.code); c.onkeydown = e => { if (e.key === 'Enter') openProduct(c.dataset.code); }; });
+}
+$('q').addEventListener('input', render);
+$('sort').onchange = render;
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => { F = b.dataset.f; document.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); render(); });
+
+/* ---------------- modal ---------------- */
+function openM(html) { $('mbox').innerHTML = html; $('modal').classList.add('show'); }
+function closeM() { $('modal').classList.remove('show'); }
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeM(); closeCart(); } });
+
+/* ---------------- chi tiết sản phẩm: chọn màu / size ---------------- */
+function openProduct(code) {
+  const p = prod(code); if (!p) return;
+  const uniq = a => [...new Set(a.filter(Boolean))];
+  let colors = uniq(p.variants.map(v => v.color)), sizes = uniq(p.variants.map(v => v.size));
+  if (!colors.length) colors = C.colors; if (!sizes.length) sizes = C.sizes;
+  let col = (p.variants.find(v => v.stock) || {}).color || colors[0] || '', siz = (p.variants.find(v => v.stock && v.color === col) || {}).size || sizes[0] || '', qty = 1;
+  const draw = () => {
+    const ok = avail(p, col, siz);
+    openM(`<div class="pd"><div class="pv">${imgTag(p.img, p.name)}</div><div>
+      <div class="meta">${esc(p.code)}${p.sold ? ' · Đã bán ' + p.sold : ''}</div>
+      <h2 style="margin:4px 0 6px">${esc(p.name)}</h2>
+      <div style="font-size:24px;font-weight:800;color:var(--accent);margin-bottom:10px">${vnd(p.price)}</div>
+      ${colors.length ? `<div class="note">Màu</div><div class="opts">${colors.map(c => `<button type="button" class="opt ${c === col ? 'on' : ''} ${avail(p, c, '') ? '' : 'no'}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>` : ''}
+      ${sizes.length ? `<div class="note">Size</div><div class="opts">${sizes.map(z => `<button type="button" class="opt ${z === siz ? 'on' : ''} ${avail(p, col, z) ? '' : 'no'}" data-z="${esc(z)}">${esc(z)}</button>`).join('')}</div>` : ''}
+      <p style="margin:4px 0 12px"><span class="tag ${ok ? 't-ok' : 't-info'}">${ok ? 'Còn hàng – giao ngay' : 'Hàng order Taobao – về sau ' + esc(lead())}</span></p>
+      <div class="qty"><span class="note" style="margin-right:6px">Số lượng</span><button type="button" id="qm" aria-label="Bớt">−</button>
+        <input id="qv" inputmode="numeric" value="${qty}" aria-label="Số lượng"><button type="button" id="qp" aria-label="Thêm">+</button></div>
+      <div class="mfoot" style="justify-content:flex-start"><button type="button" class="btn pri" id="add">Thêm vào giỏ</button><button type="button" class="btn" id="buy">Mua ngay</button><button type="button" class="btn" onclick="closeM()">Đóng</button></div>
+    </div></div>`);
+    document.querySelectorAll('.opt[data-c]').forEach(b => b.onclick = () => { col = b.dataset.c; qty = +$('qv').value || 1; draw(); });
+    document.querySelectorAll('.opt[data-z]').forEach(b => b.onclick = () => { siz = b.dataset.z; qty = +$('qv').value || 1; draw(); });
+    $('qm').onclick = () => { $('qv').value = Math.max(1, (+$('qv').value || 1) - 1); };
+    $('qp').onclick = () => { $('qv').value = Math.min(50, (+$('qv').value || 1) + 1); };
+    const addIt = () => {
+      const n = Math.min(50, Math.max(1, Math.floor(+$('qv').value) || 1));
+      const ex = CART.find(i => i.code === p.code && i.color === col && i.size === siz);
+      if (ex) ex.qty = Math.min(50, ex.qty + n); else CART.push({ code: p.code, color: col, size: siz, qty: n });
+      saveCart(); closeM();
+    };
+    $('add').onclick = () => { addIt(); toast('Đã thêm vào giỏ'); };
+    $('buy').onclick = () => { addIt(); openCart(); };
+  };
+  draw();
+}
+
+/* ---------------- giỏ hàng + đặt hàng ---------------- */
+function openCart() { renderCart(); $('drawer').classList.add('show'); $('shade').classList.add('show'); }
+function closeCart() { $('drawer').classList.remove('show'); $('shade').classList.remove('show'); }
+function renderCart() {
+  CART = CART.filter(i => prod(i.code) || !C);
+  const total = CART.reduce((s, i) => s + (prod(i.code) ? prod(i.code).price * i.qty : 0), 0);
+  $('cartBody').innerHTML = CART.length ? CART.map((i, k) => { const p = prod(i.code) || { name: i.code, price: 0 };
+    return `<div class="ci"><div class="im">${imgTag(p.img, p.name)}</div><div><b>${esc(p.name)}</b><div class="meta">${esc(i.color)} ${esc(i.size)} · ${avail(p, i.color, i.size) ? 'sẵn kho' : 'hàng order'}</div>
+      <div class="qty" style="margin-top:4px"><button type="button" data-k="${k}" data-d="-1">−</button><input value="${i.qty}" data-k="${k}" inputmode="numeric" aria-label="Số lượng"><button type="button" data-k="${k}" data-d="1">+</button></div></div>
+      <div style="text-align:right"><b>${vnd(p.price * i.qty)}</b><br><button type="button" class="x" data-del="${k}">Xóa</button></div></div>`; }).join('')
+    : '<div class="empty">Giỏ hàng trống.</div>';
+  $('cartFoot').innerHTML = CART.length ? `<div class="sum"><span>Tạm tính</span><b>${vnd(total)}</b></div>
+    <div class="note" style="margin-bottom:10px">Phí ship (nếu có) shop báo khi gọi xác nhận.</div>
+    <button type="button" class="btn pri" style="width:100%" onclick="checkout()">Đặt hàng</button>` : '';
+  $('cartBody').querySelectorAll('button[data-d]').forEach(b => b.onclick = () => { const it = CART[+b.dataset.k]; it.qty = Math.min(50, Math.max(1, it.qty + +b.dataset.d)); saveCart(); renderCart(); });
+  $('cartBody').querySelectorAll('input[data-k]').forEach(inp => inp.onchange = () => { CART[+inp.dataset.k].qty = Math.min(50, Math.max(1, Math.floor(+inp.value) || 1)); saveCart(); renderCart(); });
+  $('cartBody').querySelectorAll('button[data-del]').forEach(b => b.onclick = () => { CART.splice(+b.dataset.del, 1); saveCart(); renderCart(); });
+}
+function checkout() {
+  closeCart();
+  const me = ls.get('shop_me', {});
+  const total = CART.reduce((s, i) => s + (prod(i.code) ? prod(i.code).price * i.qty : 0), 0);
+  openM(`<h2>Thông tin nhận hàng</h2>
+    <label class="f">Họ tên *<input id="oName" value="${esc(me.name || '')}" autocomplete="name"></label>
+    <label class="f">Số điện thoại *<input id="oPhone" value="${esc(me.phone || '')}" inputmode="tel" autocomplete="tel"></label>
+    <label class="f">Địa chỉ nhận hàng *<input id="oAddr" value="${esc(me.address || '')}" autocomplete="street-address"></label>
+    <label class="f">Ghi chú (giờ nhận, đổi size…)<textarea id="oNote" rows="2"></textarea></label>
+    <div class="hp" aria-hidden="true"><label>Website<input id="oWeb" tabindex="-1" autocomplete="off"></label></div>
+    <div class="sum"><span>${CART.length} sản phẩm · tạm tính</span><b>${vnd(total)}</b></div>
+    <div class="note">Đặt xong shop sẽ gọi / nhắn Zalo xác nhận đơn và phí ship trước khi giao.</div>
+    <div class="errbox" id="oErr"></div>
+    <div class="mfoot"><button type="button" class="btn" onclick="closeM();openCart()">Quay lại giỏ</button><button type="button" class="btn pri" id="oSend">Gửi đơn hàng</button></div>`);
+  $('oSend').onclick = async () => {
+    const o = { name: $('oName').value.trim(), phone: $('oPhone').value.trim(), address: $('oAddr').value.trim(), note: $('oNote').value.trim(),
+      website: $('oWeb').value, items: CART };
+    const err = m => { $('oErr').textContent = m; $('oErr').style.display = 'block'; };
+    if (!o.name || !o.phone || !o.address) return err('Vui lòng nhập đủ họ tên, số điện thoại và địa chỉ.');
+    $('oSend').disabled = true; $('oSend').textContent = 'Đang gửi…';
+    try {
+      const r = await api('shopPlaceOrder', o);
+      ls.set('shop_me', { name: o.name, phone: o.phone, address: o.address });
+      const mine = ls.get('shop_orders', []); mine.unshift({ code: r.code, phone: o.phone, total: r.total, at: Date.now() }); ls.set('shop_orders', mine.slice(0, 20));
+      CART = []; saveCart();
+      openM(`<div class="okbox"><div>Đặt hàng thành công! Mã đơn của bạn</div><div class="big">${esc(r.code)}</div><div>Tạm tính ${vnd(r.total)}</div></div>
+        <p>Shop sẽ gọi hoặc nhắn Zalo tới <b>${esc(o.phone)}</b> để xác nhận đơn. Bạn có thể tra cứu tình trạng đơn bằng số điện thoại + mã đơn.</p>
+        <div class="mfoot"><button type="button" class="btn" onclick="openTrack('${esc(r.code)}')">Tra cứu đơn</button><button type="button" class="btn pri" onclick="closeM()">Tiếp tục mua</button></div>`);
+    } catch (e) { err(e.message); $('oSend').disabled = false; $('oSend').textContent = 'Gửi đơn hàng'; }
+  };
+}
+
+/* ---------------- tra cứu đơn ---------------- */
+function openTrack(code) {
+  const me = ls.get('shop_me', {}), mine = ls.get('shop_orders', []);
+  openM(`<h2>Tra cứu đơn hàng</h2>
+    <label class="f">Số điện thoại đã đặt<input id="tPhone" value="${esc(me.phone || '')}" inputmode="tel"></label>
+    <label class="f">Mã đơn (vd W0001 hoặc DH012)<input id="tCode" value="${esc(code || (mine[0] && mine[0].code) || '')}"></label>
+    ${mine.length ? `<div class="note">Đơn đã đặt trên máy này: ${mine.slice(0, 6).map(m => `<a href="#" class="tm" data-c="${esc(m.code)}">${esc(m.code)}</a>`).join(' · ')}</div>` : ''}
+    <div class="errbox" id="tErr"></div><div id="tRes"></div>
+    <div class="mfoot"><button type="button" class="btn" onclick="closeM()">Đóng</button><button type="button" class="btn pri" id="tGo">Tra cứu</button></div>`);
+  document.querySelectorAll('.tm').forEach(a => a.onclick = e => { e.preventDefault(); $('tCode').value = a.dataset.c; $('tGo').click(); });
+  $('tGo').onclick = async () => {
+    $('tErr').style.display = 'none'; $('tRes').innerHTML = '<p class="note">Đang tra cứu…</p>';
+    try {
+      const r = await api('shopTrackOrder', $('tPhone').value.trim(), $('tCode').value.trim());
+      const cls = /Đã giao/.test(r.status) ? 't-ok' : /hủy|Từ chối/i.test(r.status) ? 't-mute' : /Chờ duyệt/.test(r.status) ? 't-warn' : 't-info';
+      const label = r.status === 'Chờ duyệt' ? 'Shop đã nhận đơn – đang chờ gọi xác nhận' : r.status === 'Từ chối' ? 'Đơn không được xác nhận – vui lòng liên hệ shop' : r.status;
+      $('tRes').innerHTML = `<p><b>Đơn ${esc(r.code)}</b>${r.webCode ? ' (đặt online ' + esc(r.webCode) + ')' : ''} · ${esc(r.date)}<br>
+        <span class="tag ${cls}">${esc(label)}</span>${r.delivered ? ` · giao ngày ${esc(r.delivered)}` : ''}</p>
+        <table class="tl">${r.items.map(i => `<tr><td>${esc(i.name)}</td><td>${esc(i.color)} ${esc(i.size)}</td><td class="n">x${i.qty}</td></tr>`).join('')}
+        <tr><td colspan="2"><b>Tổng tiền hàng</b></td><td class="n"><b>${vnd(r.total)}</b></td></tr></table>`;
+    } catch (e) { $('tRes').innerHTML = ''; $('tErr').textContent = e.message; $('tErr').style.display = 'block'; }
+  };
+  if (code) $('tGo').click();
+}
+
+saveCart();
+loadCatalog();
+</script>
+</body>
+</html>
