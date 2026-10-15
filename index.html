@@ -430,12 +430,17 @@ $('pinForm').onsubmit = ev => {
   ev.preventDefault();
   PIN = $('pinInput').value.trim();
   try { localStorage.setItem(LS + 'pin', PIN); } catch (e) { /* bỏ qua */ }
-  $('pinGate').style.display = 'none'; clearMsg(); load(); if ($('dashView').style.display !== 'none') loadDash();
+  $('pinGate').style.display = 'none'; clearMsg(); load();
+  // tải lại mục đang xem bằng PIN mới
+  if ($('dashView').style.display !== 'none') loadDash();
+  if ($('listView').style.display !== 'none' && $('lFrom').value) loadOrders();
 };
 $('pinOut').onclick = () => { try { localStorage.removeItem(LS + 'pin'); localStorage.removeItem(LS + 'initData'); } catch (e) {} PIN = ''; askPin('Đã thoát. Nhập mã PIN để dùng lại.'); };
 
 function showMsg(text, ok) {
   const i = String(text).indexOf('PIN:');
+  // lời gọi cũ (gửi lúc chưa có PIN) trả về sau khi đã nhập PIN → bỏ qua
+  if (!ok && i >= 0 && PIN && /Nhập mã PIN để dùng/.test(text)) { $('app').classList.remove('loading'); return; }
   if (!ok && i >= 0) { $('app').classList.remove('loading'); try { localStorage.removeItem(LS + 'initData'); } catch (e) {} return askPin(String(text).slice(i + 4).trim()); }
   const m = $('msg'); m.textContent = text; m.className = 'msg ' + (ok ? 'ok' : 'err'); window.scrollTo(0, 0);
 }
