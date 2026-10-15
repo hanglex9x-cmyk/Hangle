@@ -277,6 +277,32 @@
   .wo .who{font-size:14px;margin:6px 0}
   .wo .who a{color:var(--info)}
   .wo table{margin-top:6px}
+  /* ---- Tạo đơn kiểu POS: sản phẩm trái, giỏ hàng phải ---- */
+  body.wide main{max-width:1500px}
+  .pos2{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:18px;align-items:start}
+  .posL #posQ{width:100%;margin-bottom:12px}
+  .pos2 .tiles{max-height:none;overflow:visible;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .cart{position:sticky;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .cart h2{margin:0 0 6px}
+  .cart label{margin-top:10px}
+  .cart .item{display:block;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:8px 0;margin:0;background:none;box-shadow:none}
+  .cart .ln{display:grid;grid-template-columns:auto minmax(0,1fr) 62px 92px auto;gap:8px;align-items:center}
+  .cart .ln .sum{font-size:14px;line-height:1.3}
+  .cart .ln .amt{text-align:right;font-size:14px;white-space:nowrap}
+  .cart .ln .qty{padding:6px 8px;text-align:center}
+  .cart .ed{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-top:6px}
+  .cart .item.filled .ed{display:none}
+  .cart .item .meta{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .cart .item .meta:empty{display:none}
+  #items:empty::before{content:"Giỏ hàng trống – bấm vào sản phẩm bên trái để thêm.";display:block;color:var(--muted);font-size:13px;padding:10px 0}
+  .cart .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .cart .linkbtn{background:none;border:0;color:var(--info);padding:6px 0;cursor:pointer;font-size:13px}
+  .sumr{margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+  .sumr div{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}
+  .sumr .big2{font-size:16px}
+  .sumr .big2 b{font-size:21px;color:var(--accent)}
+  #submit.full{width:100%;margin-top:12px;padding:13px;font-size:15px}
+  @media (max-width:1000px){.pos2{grid-template-columns:1fr}.cart{position:static}}
 </style>
 </head>
 <body>
@@ -453,56 +479,45 @@
   </div>
 
   <div id="form" style="display:none">
-    <section>
-      <h2>Khách hàng</h2>
-      <div class="tabs">
-        <button type="button" class="btn-ghost on" id="tabOld">Khách cũ</button>
-        <button type="button" class="btn-ghost" id="tabNew">+ Khách mới</button>
+    <div class="pos2">
+      <div class="posL">
+        <input id="posQ" placeholder="Tìm sản phẩm (mã / tên)…">
+        <div class="tiles" id="posTiles"></div>
+        <datalist id="prodList"></datalist>
+        <datalist id="colorList"></datalist>
+        <datalist id="sizeList"></datalist>
       </div>
-      <div id="oldBox">
-        <label>Tìm theo tên / SĐT / mã</label>
-        <input id="custSearch" list="custList" placeholder="Gõ để tìm khách…">
+      <aside class="cart">
+        <h2>Giỏ hàng</h2>
+        <div id="items"></div>
+        <button type="button" class="linkbtn" id="addItem">+ Gõ tay sản phẩm</button>
+        <div class="g2">
+          <div><label>Tên khách *</label><input id="custSearch" list="custList" placeholder="Gõ tên / SĐT / mã khách…" autocomplete="off"></div>
+          <div><label>Số điện thoại</label><input id="ncPhone" inputmode="tel"></div>
+        </div>
         <datalist id="custList"></datalist>
+        <label>Địa chỉ giao</label><input id="ncAddr">
         <div class="cust-info" id="custInfo"></div>
-      </div>
-      <div id="newBox" style="display:none" class="grid">
-        <div><label>Tên khách *</label><input id="ncName"></div>
-        <div><label>SĐT / Zalo</label><input id="ncPhone" inputmode="tel"></div>
-        <div><label>Địa chỉ</label><input id="ncAddr"></div>
-        <div><label>Link Facebook</label><input id="ncFb"></div>
-        <div><label>Nhóm khách</label>
-          <select id="ncGroup"><option>Khách lẻ</option><option>Khách sỉ</option><option>Cộng tác viên</option></select></div>
-      </div>
-    </section>
-
-    <section>
-      <div class="head2"><h2>Sản phẩm</h2><input id="posQ" placeholder="Tìm sản phẩm để bấm chọn…" style="max-width:260px"></div>
-      <div class="tiles" id="posTiles"></div>
-      <p style="font-size:12px;color:var(--muted);margin:8px 0 4px">Bấm vào ảnh → chọn màu, size → sản phẩm vào danh sách bên dưới (vẫn gõ tay được).</p>
-      <div id="items"></div>
-      <div style="margin-top:10px"><button type="button" class="btn-ghost" id="addItem">+ Thêm sản phẩm</button></div>
-      <datalist id="prodList"></datalist>
-      <datalist id="colorList"></datalist>
-      <datalist id="sizeList"></datalist>
-    </section>
-
-    <section>
-      <h2>Thanh toán</h2>
-      <div class="grid">
-        <div><label>Ngày đặt</label><input type="date" id="date"></div>
-        <div><label>Khách đã trả (VNĐ)</label><input id="paid" inputmode="numeric" value="0"></div>
-      </div>
-      <div style="margin-top:10px"><label>Ghi chú in lên đơn</label><textarea id="note"></textarea></div>
-      <div class="totals" style="margin-top:12px">
-        <div class="tot">Tổng tiền hàng<b id="tTotal">0</b></div>
-        <div class="tot">Đã trả<b id="tPaid">0</b></div>
-        <div class="tot">Còn lại<b id="tRemain">0</b></div>
-      </div>
-    </section>
-
-    <div class="actions">
-      <button type="button" class="btn-ghost" id="reprint">Xuất lại PDF đơn cũ…</button>
-      <button type="button" class="btn-teal" id="submit">✔ Tạo đơn</button>
+        <div class="g2">
+          <div><label>Nhóm khách (khách mới)</label>
+            <select id="ncGroup"><option>Khách lẻ</option><option>Khách sỉ</option><option>Cộng tác viên</option></select></div>
+          <div><label>Ngày</label><input type="date" id="date"></div>
+        </div>
+        <div class="g2">
+          <div><label>Giảm giá (đ)</label><input id="oDisc" inputmode="numeric" value="0"></div>
+          <div><label>Khách đã trả/cọc (đ)</label><input id="paid" inputmode="numeric" value="0"></div>
+        </div>
+        <label>Ghi chú</label><textarea id="note" rows="2" placeholder="Hẹn giao giờ hành chính…"></textarea>
+        <div class="sumr">
+          <div><span>Tiền hàng</span><b id="tSub">0 đ</b></div>
+          <div><span>Giảm giá</span><b id="tDisc">– 0 đ</b></div>
+          <div class="big2"><span>Tổng cộng</span><b id="tTotal">0 đ</b></div>
+          <div><span>Đã trả/cọc</span><b id="tPaid">0 đ</b></div>
+          <div><span>Còn phải thu</span><b id="tRemain">0 đ</b></div>
+        </div>
+        <button type="button" class="btn-teal full" id="submit">Tạo đơn</button>
+        <button type="button" class="linkbtn" id="reprint">Xuất lại PDF đơn cũ…</button>
+      </aside>
     </div>
   </div>
 
@@ -598,7 +613,6 @@ function applyInit(d) {
       `<option value="${esc(p.code)} — ${esc(p.name)}">${money(p.price)}đ • tồn ${p.stock}</option>`).join('');
     $('colorList').innerHTML = d.colors.map(c => `<option value="${esc(c)}">`).join('');
     $('sizeList').innerHTML = d.sizes.map(c => `<option value="${esc(c)}">`).join('');
-    if (!$('items').children.length) addItem();
     $('app').classList.remove('loading');
     if ($('stockView').style.display !== 'none') renderStock();
     if ($('form').style.display !== 'none') renderPos();
@@ -609,32 +623,44 @@ function customer() {
   return D.customers.find(c => c.code === v || c.name === v || c.phone === v);
 }
 
+// khách: gõ tên/SĐT/mã → trùng khách cũ thì dùng khách cũ, không thì tạo khách mới
+const custByPhone = ph => { ph = String(ph).replace(/\D/g, ''); return ph.length >= 9 ? D.customers.find(c => String(c.phone).replace(/\D/g, '') === ph) : null; };
+function showCust() {
+  const c = customer() || custByPhone($('ncPhone').value);
+  $('custInfo').innerHTML = c ? `Khách cũ <b>${esc(c.code)}</b> · ${esc(c.name)} · ${esc(c.group)}`
+    + (num(c.debt) > 0 ? ` · <span class="stock-low">Đang nợ ${esc(c.debt)}đ</span>` : '')
+    : ($('custSearch').value.trim() ? 'Khách mới – sẽ tự tạo mã KH khi tạo đơn.' : '');
+  return c;
+}
 $('custSearch').addEventListener('input', () => {
   const c = customer();
-  $('custInfo').innerHTML = c ? `<b>${esc(c.name)}</b> • ${esc(c.phone)} • ${esc(c.address)} • ${esc(c.group)}`
-    + (num(c.debt) > 0 ? ` • <span class="stock-low">Đang nợ ${esc(c.debt)}đ</span>` : '') : '';
+  if (c) { $('custSearch').value = c.name; $('ncPhone').value = c.phone || ''; $('ncAddr').value = c.address || ''; $('custSearch').dataset.code = c.code; }
+  else delete $('custSearch').dataset.code;
+  showCust();
 });
-$('tabOld').onclick = () => { mode = 'old'; $('tabOld').classList.add('on'); $('tabNew').classList.remove('on');
-  $('oldBox').style.display = ''; $('newBox').style.display = 'none'; };
-$('tabNew').onclick = () => { mode = 'new'; $('tabNew').classList.add('on'); $('tabOld').classList.remove('on');
-  $('oldBox').style.display = 'none'; $('newBox').style.display = ''; };
+$('ncPhone').addEventListener('input', () => {
+  const c = custByPhone($('ncPhone').value);
+  if (c && !customer()) { $('custSearch').value = c.name; $('custSearch').dataset.code = c.code; if (!$('ncAddr').value) $('ncAddr').value = c.address || ''; }
+  showCust();
+});
 
-function addItem() {
+function addItem(pre) {
   const div = document.createElement('div');
-  div.className = 'item';
-  div.innerHTML = `
-    <div class="pcode"><label>Sản phẩm (mã / tên)</label><input class="code" list="prodList" placeholder="Gõ mã hoặc tên sản phẩm…"></div>
-    <div><label>Màu</label><input class="color" list="colorList"></div>
-    <div><label>Size</label><input class="size" list="sizeList"></div>
-    <div><label>SL</label><input class="qty" inputmode="numeric" value="1"></div>
-    <div><label>Giảm giá (đ)</label><input class="disc" inputmode="numeric" value="0"></div>
-    <div><button type="button" class="btn-x" title="Xóa dòng">✕</button></div>
+  div.className = 'item' + (pre ? ' filled' : '');
+  div.innerHTML = `<div class="ln"><span class="pic"></span><span class="sum">Sản phẩm gõ tay</span>
+      <input class="qty" inputmode="numeric" value="${pre ? pre.qty : 1}" title="Số lượng"><span class="amt"></span>
+      <button type="button" class="btn-x" title="Xóa">✕</button></div>
+    <div class="ed"><input class="code" list="prodList" placeholder="Mã / tên sản phẩm"><input class="color" list="colorList" placeholder="Màu"><input class="size" list="sizeList" placeholder="Size"></div>
     <div class="meta"></div>`;
+  if (pre) { div.querySelector('.code').value = pre.code; div.querySelector('.color').value = pre.color; div.querySelector('.size').value = pre.size; }
   div.querySelector('.btn-x').onclick = () => { div.remove(); recalc(); };
   div.querySelectorAll('input').forEach(i => i.addEventListener('input', () => { fillVariants(div); recalc(); }));
   $('items').appendChild(div);
+  fillVariants(div); recalc();
+  if (!pre) div.querySelector('.code').focus();
+  return div;
 }
-$('addItem').onclick = addItem;
+$('addItem').onclick = () => addItem();
 
 function renderPos() {
   if (!D) return;
@@ -658,7 +684,7 @@ function pickVariant(code) {
         <div><label>Size</label><input id="pvSize" list="pvSizes" value="${esc(vars[0] ? vars[0].size : '')}"><datalist id="pvSizes">${sizes.map(z => `<option value="${esc(z)}">`).join('')}</datalist></div>
         <div><label>Số lượng</label><input id="pvQty" inputmode="numeric" value="1"></div></div>
         <div class="calc" id="pvTon"></div></div></div>
-    <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Hủy</button><button type="button" class="btn-teal" id="pvAdd">Thêm vào đơn</button></div>`);
+    <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Hủy</button><button type="button" class="btn-teal" id="pvAdd">Thêm vào giỏ</button></div>`);
   const ton = () => {
     const c = $('pvColor').value.trim().toLowerCase(), z = $('pvSize').value.trim().toLowerCase();
     const x = vars.find(v => v.color.toLowerCase() === c && v.size.toLowerCase() === z);
@@ -668,14 +694,12 @@ function pickVariant(code) {
   };
   ['pvColor', 'pvSize', 'pvQty'].forEach(i => $(i).addEventListener('input', ton)); ton();
   $('pvAdd').onclick = () => {
-    let row = [...document.querySelectorAll('#items .item')].find(d => !d.querySelector('.code').value.trim());
-    if (!row) { addItem(); row = $('items').lastElementChild; }
-    row.querySelector('.code').value = p.code + ' — ' + p.name;
-    row.querySelector('.color').value = $('pvColor').value.trim();
-    row.querySelector('.size').value = $('pvSize').value.trim();
-    row.querySelector('.qty').value = Math.max(1, num($('pvQty').value) || 1);
-    row.querySelector('.code').dispatchEvent(new Event('input'));
-    closeV(); showMsg('Đã thêm ' + p.code + ' vào đơn.', true);
+    const color = $('pvColor').value.trim(), size = $('pvSize').value.trim(), qty = Math.max(1, num($('pvQty').value) || 1);
+    const same = [...document.querySelectorAll('#items .item')].find(d => prodCode(d.querySelector('.code').value) === p.code
+      && d.querySelector('.color').value.trim().toLowerCase() === color.toLowerCase() && d.querySelector('.size').value.trim().toLowerCase() === size.toLowerCase());
+    if (same) { same.querySelector('.qty').value = num(same.querySelector('.qty').value) + qty; fillVariants(same); recalc(); }
+    else addItem({ code: p.code, color, size, qty });
+    closeV();
   };
 }
 
@@ -693,41 +717,42 @@ const thumb = (url, cls) => url
 function fillVariants(div) {
   const code = prodCode(div.querySelector('.code').value);
   const p = findProd(code);
-  const meta = div.querySelector('.meta');
-  if (!p) { meta.textContent = code ? '⚠ Mã hàng chưa có trong MA_SP' : ''; return; }
+  const meta = div.querySelector('.meta'), sum = div.querySelector('.sum');
   const color = div.querySelector('.color').value.trim(), size = div.querySelector('.size').value.trim();
-  const vars = D.stock.filter(s => s.code.toLowerCase() === code.toLowerCase());
-  const here = vars.find(s => s.color.toLowerCase() === color.toLowerCase() && s.size.toLowerCase() === size.toLowerCase());
   const qty = num(div.querySelector('.qty').value);
-  let stockTxt = '';
-  if (color || size) {
-    const have = here ? here.qty : 0;
-    stockTxt = have >= qty ? ` • <span class="stock-ok">Tồn ${have} → hàng có sẵn</span>`
-                           : ` • <span class="stock-low">Tồn ${have} → sẽ là đơn ORDER (chờ hàng)</span>`;
+  div.querySelector('.pic').innerHTML = p ? thumb(p.img, 'sm') : '';
+  if (!p) {
+    sum.textContent = 'Sản phẩm gõ tay'; div.querySelector('.amt').textContent = '';
+    meta.textContent = code ? '⚠ Mã hàng chưa có trong MA_SP' : ''; return;
   }
-  const varTxt = vars.filter(v => v.color || v.size).map(v => `${v.color} ${v.size}: ${v.qty}`).join(', ');
-  meta.innerHTML = thumb(p.img, 'sm') + `<div><b>${esc(p.code)} — ${esc(p.name)}</b> • ${money(p.price)}đ${stockTxt}`
-    + (varTxt ? `<br>Đang có: ${esc(varTxt)}` : '') + '</div>';
+  sum.innerHTML = `<b>${esc(p.code)}</b>${color ? ' · ' + esc(color) : ''}${size ? ' · ' + esc(size) : ''}<br><span style="font-size:12px;color:var(--muted)">${esc(p.name)}</span>`;
+  div.querySelector('.amt').textContent = money(p.price * qty) + ' đ';
+  const here = D.stock.find(s => s.code.toLowerCase() === code.toLowerCase() && s.color.toLowerCase() === color.toLowerCase() && s.size.toLowerCase() === size.toLowerCase());
+  const have = here ? here.qty : 0;
+  meta.innerHTML = (color || size) ? (have >= qty ? `<span class="stock-ok">Tồn ${have} → hàng có sẵn</span>`
+    : `<span class="stock-low">Tồn ${have} → đơn ORDER (chờ hàng)</span>`) : '';
 }
 
 function readItems() {
   return [...document.querySelectorAll('.item')].map(d => ({
     code: prodCode(d.querySelector('.code').value), color: d.querySelector('.color').value.trim(),
     size: d.querySelector('.size').value.trim(), qty: num(d.querySelector('.qty').value),
-    discount: num(d.querySelector('.disc').value),
+    discount: 0,
   })).filter(i => i.code);
 }
 
 function recalc() {
   if (!D) return;
-  const total = readItems().reduce((s, i) => {
+  const sub = readItems().reduce((s, i) => {
     const p = D.products.find(x => x.code.toLowerCase() === i.code.toLowerCase());
-    return s + (p ? p.price * i.qty - i.discount : 0);
+    return s + (p ? p.price * i.qty : 0);
   }, 0);
-  const paid = num($('paid').value);
-  $('tTotal').textContent = money(total); $('tPaid').textContent = money(paid); $('tRemain').textContent = money(total - paid);
+  const disc = num($('oDisc').value), total = sub - disc, paid = num($('paid').value);
+  $('tSub').textContent = money(sub) + ' đ'; $('tDisc').textContent = '– ' + money(disc) + ' đ';
+  $('tTotal').textContent = money(total) + ' đ'; $('tPaid').textContent = money(paid) + ' đ'; $('tRemain').textContent = money(total - paid) + ' đ';
 }
 $('paid').addEventListener('input', recalc);
+$('oDisc').addEventListener('input', recalc);
 
 $('submit').onclick = () => {
   clearMsg();
@@ -736,21 +761,21 @@ $('submit').onclick = () => {
   const bad = items.find(i => !D.products.some(p => p.code.toLowerCase() === i.code.toLowerCase()));
   if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong MA_SP.');
   if (items.some(i => i.qty <= 0)) return showMsg('Số lượng phải lớn hơn 0.');
+  items[0].discount = num($('oDisc').value);   // giảm giá cả đơn ghi vào dòng đầu
   const payload = { date: $('date').value, items, paid: num($('paid').value), note: $('note').value };
-  if (mode === 'old') {
-    const c = customer(); if (!c) return showMsg('Chọn khách trong danh sách, hoặc bấm "+ Khách mới".');
-    payload.customerCode = c.code;
-  } else {
-    if (!$('ncName').value.trim()) return showMsg('Nhập tên khách mới.');
-    payload.newCustomer = { name: $('ncName').value.trim(), phone: $('ncPhone').value.trim(),
-      address: $('ncAddr').value.trim(), facebook: $('ncFb').value.trim(), group: $('ncGroup').value };
+  const c = showCust();
+  if (c) payload.customerCode = c.code;
+  else {
+    const name = $('custSearch').value.trim();
+    if (!name) return showMsg('Nhập tên khách.');
+    payload.newCustomer = { name, phone: $('ncPhone').value.trim(), address: $('ncAddr').value.trim(), facebook: '', group: $('ncGroup').value };
   }
   $('app').classList.add('loading'); $('submit').textContent = 'Đang tạo đơn…';
   run().withSuccessHandler(showResult)
     .withFailureHandler(e => { showMsg('Không tạo được đơn: ' + e.message); done(); })
     .createOrder(payload, PIN);
 };
-function done() { $('app').classList.remove('loading'); $('submit').innerHTML = '✔ Tạo đơn'; }
+function done() { $('app').classList.remove('loading'); $('submit').innerHTML = 'Tạo đơn'; }
 
 $('reprint').onclick = () => {
   const code = prompt('Nhập mã đơn cần xuất lại PDF (vd: DH001):');
@@ -799,8 +824,8 @@ $('rCopy').onclick = () => {
     () => { document.execCommand('copy'); showMsg('Đã copy tin nhắn.', true); });
 };
 $('rNew').onclick = () => {
-  $('items').innerHTML = ''; $('note').value = ''; $('paid').value = 0; $('custSearch').value = ''; $('custInfo').innerHTML = '';
-  ['ncName','ncPhone','ncAddr','ncFb'].forEach(i => $(i).value = '');
+  $('items').innerHTML = ''; $('note').value = ''; $('paid').value = 0; $('oDisc').value = 0; $('custSearch').value = ''; $('custInfo').innerHTML = '';
+  ['ncPhone','ncAddr'].forEach(i => $(i).value = '');
   $('result').style.display = 'none'; $('form').style.display = ''; clearMsg(); recalc(); load();
 };
 
@@ -819,6 +844,7 @@ function showView(v) {
   if (v === 'list' && !$('lFrom').value) { setRange('open'); }
   if (v === 'stock') renderStock();
   if (v === 'new') renderPos();
+  document.body.classList.toggle('wide', v === 'new');
   if (v === 'cust') renderCusts();
   if (v === 'kho') { if (!STAFF) initKho(); renderTon(); }
   if (v === 'report') initReport();
