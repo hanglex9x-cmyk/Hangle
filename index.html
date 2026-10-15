@@ -1542,10 +1542,10 @@ function renderTon() {
   });
   const pos = D.stock.reduce((a, s) => a + Math.max(0, s.qty), 0), neg = D.stock.filter(s => s.qty < 0).length;
   $('tonSum').textContent = `Tổng tồn ${pos} cái • ${neg} màu/size âm kho`;
-  $('tonBox').innerHTML = rows.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th>Mã</th><th>Tên sản phẩm</th><th>Màu</th><th>Size</th>
+  $('tonBox').innerHTML = rows.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th style="width:56px">Ảnh</th><th>Mã</th><th>Tên sản phẩm</th><th>Màu</th><th>Size</th>
       <th class="n">Đã nhập</th><th class="n">Đã bán</th><th class="n">Còn tồn</th><th>Trạng thái</th></tr></thead><tbody>
     ${rows.map(s => { const p = name[s.code] || {};
-      return `<tr><td>${esc(s.code)}</td><td>${esc(p.name || '')}</td><td>${esc(s.color) || '—'}</td><td>${esc(s.size) || '—'}</td>
+      return `<tr><td>${thumb(p.img, 'sm')}</td><td>${esc(s.code)}</td><td>${esc(p.name || '')}</td><td>${esc(s.color) || '—'}</td><td>${esc(s.size) || '—'}</td>
         <td class="n">${s.inQty}</td><td class="n">${s.outQty}</td><td class="n ${qcls(s.qty)}"><b>${s.qty}</b></td>
         <td class="st"><span class="tag ${stockTag(s.qty)[0]}">${stockTag(s.qty)[1]}</span></td></tr>`; }).join('')}
     </tbody></table></div>` : '<p style="color:var(--muted)">Không có dòng tồn kho phù hợp.</p>';
