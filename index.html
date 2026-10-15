@@ -244,7 +244,7 @@
         <button type="button" class="btn-ghost" id="kAddRow">+ Thêm dòng</button>
         <button type="button" class="btn-teal" id="kSave">✔ Lưu phiếu nhập</button>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px">Giá tệ / tỷ giá / ship để trống = lấy theo DANH_MUC và TY_GIA như trong sheet.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Giá tệ / tỷ giá / ship để trống = lấy theo MA_SP và TY_GIA như trong sheet.</div>
     </section>
     <section>
       <h2>Báo cáo xuất – nhập – tồn</h2>
@@ -474,7 +474,7 @@ function fillVariants(div) {
   const code = prodCode(div.querySelector('.code').value);
   const p = findProd(code);
   const meta = div.querySelector('.meta');
-  if (!p) { meta.textContent = code ? '⚠ Mã hàng chưa có trong DANH_MUC' : ''; return; }
+  if (!p) { meta.textContent = code ? '⚠ Mã hàng chưa có trong MA_SP' : ''; return; }
   const color = div.querySelector('.color').value.trim(), size = div.querySelector('.size').value.trim();
   const vars = D.stock.filter(s => s.code.toLowerCase() === code.toLowerCase());
   const here = vars.find(s => s.color.toLowerCase() === color.toLowerCase() && s.size.toLowerCase() === size.toLowerCase());
@@ -514,7 +514,7 @@ $('submit').onclick = () => {
   const items = readItems();
   if (!items.length) return showMsg('Chưa có sản phẩm nào.');
   const bad = items.find(i => !D.products.some(p => p.code.toLowerCase() === i.code.toLowerCase()));
-  if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong DANH_MUC.');
+  if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong MA_SP.');
   if (items.some(i => i.qty <= 0)) return showMsg('Số lượng phải lớn hơn 0.');
   const payload = { date: $('date').value, items, paid: num($('paid').value), note: $('note').value };
   if (mode === 'old') {
@@ -699,7 +699,7 @@ $('sQ').addEventListener('input', renderStock);
 $('sFilter').onchange = renderStock;
 $('sReload').onclick = () => { load(); };
 
-// thêm / đổi ảnh: thu nhỏ còn 800px rồi gửi lên Drive + DANH_MUC
+// thêm / đổi ảnh: thu nhỏ còn 800px rồi gửi lên Drive + MA_SP
 let imgFor = '';
 function shrink(file, max, cb) {
   const img = new Image();
@@ -718,7 +718,7 @@ $('imgFile').onchange = () => {
   $('app').classList.add('loading');
   shrink(f, 800, data => run().withSuccessHandler(r => {
     const p = findProd(r.code); if (p) p.img = r.img + '&t=' + Date.now();
-    $('app').classList.remove('loading'); renderStock(); showMsg('Đã lưu ảnh cho ' + r.code + ' (DANH_MUC cột Ảnh).', true);
+    $('app').classList.remove('loading'); renderStock(); showMsg('Đã lưu ảnh cho ' + r.code + ' (MA_SP cột Ảnh).', true);
   }).withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Không lưu được ảnh: ' + e.message); })
     .saveProductImage(imgFor, data, PIN));
 };
@@ -1114,7 +1114,7 @@ function openImport(kind) {
   mSubmit = () => {
     const ok = impRows.filter(r => !r._err);
     if (!ok.length) return alert('Không có dòng hợp lệ để nhập.');
-    if (!confirm(`Nhập ${ok.length} dòng vào ${kind === 'cust' ? 'KHACH_HANG' : 'DANH_MUC'}?`)) return;
+    if (!confirm(`Nhập ${ok.length} dòng vào ${kind === 'cust' ? 'MA_KH' : 'MA_SP'}?`)) return;
     const rows = ok.map(r => { const o = { line: r._line }; cfg.cols.forEach(([k]) => { o[k] = r[k]; }); return o; });
     act(cfg.fn, [rows, $('impMode').value], r => `Đã nhập: thêm ${r.added}, cập nhật ${r.updated}, bỏ qua ${r.skipped}`
       + (r.errors.length ? `, lỗi ${r.errors.length} (dòng ${r.errors.map(e => e.line).join(', ')})` : '') + '.',
