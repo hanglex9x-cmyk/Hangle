@@ -3,7 +3,7 @@
 <head>
 <base target="_top">
 <meta charset="utf-8">
-<title>Đơn hàng</title>
+<title>Quản lý bán hàng</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -145,12 +145,18 @@
   .imp-prev tr.bad td{color:var(--red)}
   .imp-prev tr.dup td{color:var(--amber)}
   .head2 .rowbtns button{padding:7px 12px;font-size:13px}
+  body.staff .qlOnly{display:none!important}
+  .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text);margin-top:10px;cursor:pointer}
+  .chk input{width:auto}
+  .rep3{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .xnt td.st{white-space:nowrap}
   /* máy tính: các mục thành thanh dọc bên trái */
   @media (min-width:900px){
     body{padding-left:210px}
     nav{position:fixed;top:0;left:0;bottom:0;width:210px;flex-direction:column;overflow-y:auto;
         background:var(--navy);border:0;padding:0 0 12px;z-index:6}
-    nav::before{content:'🧾 Bán hàng order';display:block;color:#fff;font-weight:bold;font-size:15px;
+    body.staff nav::before{content:'🧾 Nhân viên bán hàng'}
+    nav::before{content:'🧾 Quản lý bán hàng';display:block;color:#fff;font-weight:bold;font-size:15px;
         padding:18px 18px 14px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:8px}
     nav button{flex:none;text-align:left;background:transparent;color:#CBD5E1;border:0;border-left:3px solid transparent;
         border-radius:0;padding:12px 18px;font-size:14px;font-weight:normal}
@@ -164,7 +170,7 @@
 <body>
 <div id="pinGate"><form id="pinForm">
   <h2>🔒 Nhập mã PIN</h2>
-  <div style="font-size:13px;color:var(--muted)">Hỏi chủ shop để lấy mã PIN.</div>
+  <div style="font-size:13px;color:var(--muted)" id="pinHint">Hỏi chủ shop để lấy mã PIN.</div>
   <input id="pinInput" type="password" inputmode="numeric" autocomplete="off">
   <div id="pinMsg"></div>
   <button type="submit" class="btn-teal" style="margin-top:8px">Vào</button>
@@ -177,7 +183,7 @@
 </form></div>
 <header><h1>Tổng quan</h1><span><button type="button" id="pinOut" title="Xóa mã PIN đã nhớ trên máy này">Thoát</button>
   <span class="code" id="orderCode">…</span></span></header>
-<nav><button type="button" class="on" id="navDash">◎ Tổng quan</button><button type="button" id="navNew">＋ Tạo đơn</button><button type="button" id="navList">☰ Đơn hàng</button><button type="button" id="navCust">☺ Khách</button><button type="button" id="navStock">▦ Sản phẩm</button><button type="button" id="navKho">⇅ Kho</button><button type="button" id="navRate">¥ Tỷ giá</button></nav>
+<nav><button type="button" class="on qlOnly" id="navDash">◎ Tổng quan</button><button type="button" class="qlOnly" id="navReport">▤ Báo cáo ngày</button><button type="button" id="navCust">☺ Mã khách hàng</button><button type="button" id="navStock">▦ Mã sản phẩm</button><button type="button" id="navList">☰ Đơn hàng</button><button type="button" id="navNew">＋ Tạo đơn</button><button type="button" id="navKho">⇅ Kho</button><button type="button" class="qlOnly" id="navRate">¥ Tỷ giá</button></nav>
 <main id="app" class="loading">
   <div id="msg" class="msg"></div>
   <input type="file" id="imgFile" accept="image/*" style="display:none">
@@ -185,8 +191,8 @@
   <div id="stockView" style="display:none">
     <section>
       <div class="head2"><h2>Sản phẩm &amp; tồn kho</h2>
-        <span class="rowbtns"><button type="button" class="btn-ghost" id="pImp">⬆ Nhập Excel</button>
-        <button type="button" class="btn-teal" id="pAdd">＋ Thêm sản phẩm</button></span></div>
+        <span class="rowbtns"><button type="button" class="btn-ghost qlOnly" id="pImp">⬆ Nhập Excel</button>
+        <button type="button" class="btn-teal qlOnly" id="pAdd">＋ Thêm sản phẩm</button></span></div>
       <div class="grid">
         <div style="grid-column:span 2"><label>Tìm theo mã / tên sản phẩm</label><input id="sQ" placeholder="vd: SP03 hoặc legging"></div>
         <div><label>Lọc</label><select id="sFilter">
@@ -201,7 +207,7 @@
   <div id="custView" style="display:none">
     <section>
       <div class="head2"><h2>Khách hàng</h2>
-        <span class="rowbtns"><button type="button" class="btn-ghost" id="cImp">⬆ Nhập Excel</button>
+        <span class="rowbtns"><button type="button" class="btn-ghost qlOnly" id="cImp">⬆ Nhập Excel</button>
         <button type="button" class="btn-teal" id="cAdd">＋ Thêm khách</button></span></div>
       <div class="grid">
         <div style="grid-column:span 2"><label>Tìm theo tên / SĐT / mã</label>
@@ -234,6 +240,16 @@
 
   <div id="khoView" style="display:none">
     <section>
+      <div class="head2"><h2>Tồn kho theo màu / size</h2><span id="tonSum" style="font-size:13px;color:var(--muted)"></span></div>
+      <div class="grid">
+        <div style="grid-column:span 2"><label>Tìm mã / tên / màu / size</label><input id="tQ" placeholder="vd: SP03, đen, XL"></div>
+        <div><label>Lọc</label><select id="tF"><option value="">Tất cả</option><option value="pos">Còn hàng</option>
+          <option value="neg">Âm kho – cần đặt Taobao</option><option value="zero">Hết hàng</option></select></div>
+        <div style="align-self:end"><button type="button" class="btn-ghost" id="tReload" style="width:100%">↻ Làm mới số liệu</button></div>
+      </div>
+    </section>
+    <div id="tonBox" style="margin-bottom:14px"></div>
+    <section class="qlOnly">
       <h2>Nhập hàng vào kho</h2>
       <div class="grid">
         <div><label>Ngày về</label><input type="date" id="kDate"></div>
@@ -246,7 +262,7 @@
       </div>
       <div style="font-size:12px;color:var(--muted);margin-top:8px">Giá tệ / tỷ giá / ship để trống = lấy theo MA_SP và TY_GIA như trong sheet.</div>
     </section>
-    <section>
+    <section class="qlOnly">
       <h2>Báo cáo xuất – nhập – tồn</h2>
       <div class="grid">
         <div><label>Từ ngày</label><input type="date" id="xFrom"></div>
@@ -260,12 +276,31 @@
         <button type="button" class="btn-ghost xq" data-r="y">Năm nay</button>
       </div>
     </section>
-    <div id="xntBox"></div>
+    <div id="xntBox" class="qlOnly"></div>
+  </div>
+
+  <div id="reportView" style="display:none">
+    <section>
+      <h2>Báo cáo bán hàng theo khoảng ngày</h2>
+      <div class="grid">
+        <div><label>Từ ngày</label><input type="date" id="bcFrom"></div>
+        <div><label>Đến ngày</label><input type="date" id="bcTo"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="bcGo" style="width:100%">Xem báo cáo</button></div>
+      </div>
+      <div class="quick">
+        <button type="button" class="btn-ghost bcq" data-r="0">Hôm nay</button>
+        <button type="button" class="btn-ghost bcq" data-r="1">Hôm qua</button>
+        <button type="button" class="btn-ghost bcq" data-r="7">7 ngày</button>
+        <button type="button" class="btn-ghost bcq" data-r="m">Tháng này</button>
+        <button type="button" class="btn-ghost bcq" data-r="pm">Tháng trước</button>
+      </div>
+    </section>
+    <div id="bcBox"></div>
   </div>
 
   <div id="listView" style="display:none">
     <section>
-      <h2>Xem đơn theo ngày</h2>
+      <h2>Đơn hàng</h2>
       <div class="grid">
         <div><label>Từ ngày</label><input type="date" id="lFrom"></div>
         <div><label>Đến ngày</label><input type="date" id="lTo"></div>
@@ -276,13 +311,15 @@
         <button type="button" class="btn-ghost" data-r="1">Hôm qua</button>
         <button type="button" class="btn-ghost" data-r="7">7 ngày</button>
         <button type="button" class="btn-ghost" data-r="m">Tháng này</button>
+        <button type="button" class="btn-ghost" data-r="open">Tất cả đơn chưa giao</button>
       </div>
+      <label class="chk"><input type="checkbox" id="lShowDone"> Hiện cả đơn <b>đã giao</b> (mặc định tự ẩn)</label>
     </section>
     <div class="totals" style="margin-bottom:14px">
       <div class="tot">Số đơn (hợp lệ)<b id="sCount">0</b></div>
-      <div class="tot">Tổng tiền<b id="sTotal">0</b></div>
-      <div class="tot">Đã thu<b id="sPaid">0</b></div>
-      <div class="tot">Còn nợ<b id="sDebt">0</b></div>
+      <div class="tot qlOnly">Tổng tiền<b id="sTotal">0</b></div>
+      <div class="tot qlOnly">Đã thu<b id="sPaid">0</b></div>
+      <div class="tot qlOnly">Còn nợ<b id="sDebt">0</b></div>
     </div>
     <div id="orderList"></div>
   </div>
@@ -379,8 +416,12 @@ function run() {
 }
 
 // mã PIN cho người dùng không phải chủ shop – nhớ trên máy này
+// giao diện nhân viên: link …/exec?nv=1 hoặc nhanvien.html (quyền thật do mã PIN quyết định ở server)
+const STAFF = /*STAFF*/false || /[?&]nv=1\b/.test(location.search);
+const LS = STAFF ? 'nv_' : '';
+if (STAFF) { document.body.classList.add('staff'); $('pinHint').textContent = 'Nhập mã PIN nhân viên (hỏi chủ shop).'; }
 let PIN = '';
-try { PIN = localStorage.getItem('pin') || ''; } catch (e) { /* trình duyệt chặn lưu */ }
+try { PIN = localStorage.getItem(LS + 'pin') || ''; } catch (e) { /* trình duyệt chặn lưu */ }
 function askPin(text) {
   $('pinMsg').textContent = text || '';
   $('pinGate').style.display = 'flex'; $('pinInput').value = ''; $('pinInput').focus();
@@ -388,25 +429,25 @@ function askPin(text) {
 $('pinForm').onsubmit = ev => {
   ev.preventDefault();
   PIN = $('pinInput').value.trim();
-  try { localStorage.setItem('pin', PIN); } catch (e) { /* bỏ qua */ }
+  try { localStorage.setItem(LS + 'pin', PIN); } catch (e) { /* bỏ qua */ }
   $('pinGate').style.display = 'none'; clearMsg(); load(); if ($('dashView').style.display !== 'none') loadDash();
 };
-$('pinOut').onclick = () => { try { localStorage.removeItem('pin'); localStorage.removeItem('initData'); } catch (e) {} PIN = ''; askPin('Đã thoát. Nhập mã PIN để dùng lại.'); };
+$('pinOut').onclick = () => { try { localStorage.removeItem(LS + 'pin'); localStorage.removeItem(LS + 'initData'); } catch (e) {} PIN = ''; askPin('Đã thoát. Nhập mã PIN để dùng lại.'); };
 
 function showMsg(text, ok) {
   const i = String(text).indexOf('PIN:');
-  if (!ok && i >= 0) { $('app').classList.remove('loading'); try { localStorage.removeItem('initData'); } catch (e) {} return askPin(String(text).slice(i + 4).trim()); }
+  if (!ok && i >= 0) { $('app').classList.remove('loading'); try { localStorage.removeItem(LS + 'initData'); } catch (e) {} return askPin(String(text).slice(i + 4).trim()); }
   const m = $('msg'); m.textContent = text; m.className = 'msg ' + (ok ? 'ok' : 'err'); window.scrollTo(0, 0);
 }
 function clearMsg() { $('msg').className = 'msg'; }
 
 function load() {
   if (!D) {
-    try { const c = JSON.parse(localStorage.getItem('initData') || 'null'); if (c) applyInit(c); } catch (e) { /* bỏ qua */ }
+    try { const c = JSON.parse(localStorage.getItem(LS + 'initData') || 'null'); if (c) applyInit(c); } catch (e) { /* bỏ qua */ }
   }
   if (!D) $('app').classList.add('loading');
   run().withSuccessHandler(d => {
-    try { localStorage.setItem('initData', JSON.stringify(d)); } catch (e) { /* bỏ qua */ }
+    try { localStorage.setItem(LS + 'initData', JSON.stringify(d)); } catch (e) { /* bỏ qua */ }
     applyInit(d);
   }).withFailureHandler(e => { showMsg('Lỗi tải dữ liệu: ' + e.message); $('app').classList.remove('loading'); })
     .getInitData(PIN);
@@ -587,7 +628,7 @@ $('rNew').onclick = () => {
 /* ---------------- xem đơn theo ngày ---------------- */
 const ymd = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 const VIEWS = { dash: ['dashView', 'navDash'], rate: ['rateView', 'navRate'], new: ['form', 'navNew'], list: ['listView', 'navList'], stock: ['stockView', 'navStock'], cust: ['custView', 'navCust'],
-  kho: ['khoView', 'navKho'] };
+  kho: ['khoView', 'navKho'], report: ['reportView', 'navReport'] };
 function showView(v) {
   Object.entries(VIEWS).forEach(([k, [box, nav]]) => {
     $(box).style.display = k === v ? '' : 'none';
@@ -596,10 +637,11 @@ function showView(v) {
   $('result').style.display = 'none';
   clearMsg();
   document.querySelector('header h1').textContent = $(VIEWS[v][1]).textContent.replace(/^\S+\s*/, '');
-  if (v === 'list' && !$('lFrom').value) { setRange('0'); }
+  if (v === 'list' && !$('lFrom').value) { setRange('open'); }
   if (v === 'stock') renderStock();
   if (v === 'cust') renderCusts();
-  if (v === 'kho') initKho();
+  if (v === 'kho') { if (!STAFF) initKho(); renderTon(); }
+  if (v === 'report') initReport();
   if (v === 'dash') loadDash();
   if (v === 'rate') loadRates();
 }
@@ -610,6 +652,7 @@ $('navCust').onclick = () => showView('cust');
 $('navKho').onclick = () => showView('kho');
 $('navDash').onclick = () => showView('dash');
 $('navRate').onclick = () => showView('rate');
+$('navReport').onclick = () => showView('report');
 
 /* ---------------- hộp nhập liệu dùng chung (thêm / sửa) ---------------- */
 let mSubmit = null;
@@ -661,9 +704,9 @@ function renderStock() {
   $('stockList').innerHTML = list.length ? list.map(p => {
     const vars = D.stock.filter(s => s.code === p.code && (s.color || s.size));
     return `<div class="prod">
-      <div class="imgbox">${thumb(p.img)}<button type="button" class="linkbtn imgbtn" data-code="${esc(p.code)}">${p.img ? 'Đổi ảnh' : '+ Thêm ảnh'}</button>
-        <button type="button" class="linkbtn pEdit" data-code="${esc(p.code)}">Sửa</button>
-        <button type="button" class="linkbtn pDel" data-code="${esc(p.code)}" style="color:var(--red)">Xóa</button></div>
+      <div class="imgbox">${thumb(p.img)}<button type="button" class="linkbtn imgbtn qlOnly" data-code="${esc(p.code)}">${p.img ? 'Đổi ảnh' : '+ Thêm ảnh'}</button>
+        <button type="button" class="linkbtn pEdit qlOnly" data-code="${esc(p.code)}">Sửa</button>
+        <button type="button" class="linkbtn pDel qlOnly" data-code="${esc(p.code)}" style="color:var(--red)">Xóa</button></div>
       <div class="body">
         <div class="head"><span><b>${esc(p.code)}</b> — ${esc(p.name)}<br><span style="color:var(--muted);font-size:12px">Giá bán ${money(p.price)}đ</span></span>
           <span>Tồn <span class="bigstock ${qcls(p.stock)}">${p.stock}</span></span></div>
@@ -739,7 +782,7 @@ function renderCusts() {
       <span>${esc(c.phone) || 'chưa có SĐT'} • ${esc(c.group)} • mua ${esc(c.total || '0')}đ${num(c.debt) > 0 ? ` • <b class="debt">nợ ${esc(c.debt)}đ</b>` : ''}</span></div>
       <div class="rowbtns"><button type="button" class="btn-ghost cView" data-code="${esc(c.code)}">Xem</button>
         <button type="button" class="btn-ghost cEdit" data-code="${esc(c.code)}">Sửa</button>
-        <button type="button" class="btn-red cDel" data-code="${esc(c.code)}">Xóa</button></div></div>`).join('')
+        <button type="button" class="btn-red cDel qlOnly" data-code="${esc(c.code)}">Xóa</button></div></div>`).join('')
     : '<p style="color:var(--muted)">Không tìm thấy khách.</p>';
   const byCode = code => D.customers.find(c => c.code === code);
   document.querySelectorAll('.cView').forEach(b => b.onclick = () => { $('cQ').value = b.dataset.code; loadCustomer(); });
@@ -818,6 +861,7 @@ function setRange(r) {
   if (r === '1') { f.setDate(t.getDate() - 1); to = new Date(f); }
   else if (r === '7') f.setDate(t.getDate() - 6);
   else if (r === 'm') f = new Date(t.getFullYear(), t.getMonth(), 1);
+  else if (r === 'open') { f = new Date(2020, 0, 1); $('lShowDone').checked = false; }
   $('lFrom').value = ymd(f); $('lTo').value = ymd(to); loadOrders();
 }
 document.querySelectorAll('#listView .quick button').forEach(b => b.onclick = () => setRange(b.dataset.r));
@@ -828,11 +872,22 @@ function loadOrders() {
   $('app').classList.add('loading'); $('orderList').innerHTML = '';
   run().withSuccessHandler(res => {
     $('app').classList.remove('loading');
-    const s = res.summary;
+    LAST_ORDERS = res; renderOrders();
+  }).withFailureHandler(e => { showMsg('Lỗi tải đơn: ' + e.message); $('app').classList.remove('loading'); })
+    .listOrders($('lFrom').value, $('lTo').value, PIN);
+}
+let LAST_ORDERS = null;
+$('lShowDone').onchange = () => LAST_ORDERS && renderOrders();
+function renderOrders() {
+    const res = LAST_ORDERS, s = res.summary;
+    const showDone = $('lShowDone').checked;
+    const list = res.orders.filter(o => showDone || o.status !== 'Đã giao');
+    const hiddenDone = res.orders.length - list.length;
     $('sCount').textContent = s.valid + (s.count > s.valid ? ` (+${s.count - s.valid} hủy)` : '');
-    $('sTotal').textContent = money(s.total); $('sPaid').textContent = money(s.paid); $('sDebt').textContent = money(s.debt);
+    if (!s.hidden) { $('sTotal').textContent = money(s.total); $('sPaid').textContent = money(s.paid); $('sDebt').textContent = money(s.debt); }
     const cls = { 'Chờ hàng': 'b-cho', 'Đang xử lý': 'b-xl', 'Đã giao': 'b-giao', 'Đã hủy': 'b-huy' };
-    $('orderList').innerHTML = res.orders.length ? res.orders.map(o => `
+    $('orderList').innerHTML = (hiddenDone ? `<p style="font-size:12px;color:var(--muted)">Đang ẩn ${hiddenDone} đơn đã giao – tick "Hiện cả đơn đã giao" để xem.</p>` : '')
+      + (list.length ? list.map(o => `
       <div class="ord">
         <div class="ord-top"><span><b>${esc(o.code)}</b> • ${esc(o.date)} • ${esc(o.custName || o.custCode)}</span>
           <span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span></div>
@@ -844,7 +899,7 @@ function loadOrders() {
             : `<button type="button" class="btn-teal stBtn" data-code="${esc(o.code)}" data-a="giao">✔ Đã giao</button>
                <button type="button" class="btn-red stBtn" data-code="${esc(o.code)}" data-a="huy">✕ Hủy</button>`}
           <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button></span></div>
-      </div>`).join('') : '<p style="color:var(--muted)">Không có đơn nào trong khoảng ngày này.</p>';
+      </div>`).join('') : '<p style="color:var(--muted)">Không có đơn nào' + (hiddenDone ? ' chưa giao' : '') + ' trong khoảng ngày này.</p>');
     bindPdf('#orderList', 'listView');
     const ask = { giao: 'Đánh dấu đơn %s ĐÃ GIAO (ghi ngày giao hôm nay, dòng đơn sẽ tự ẩn trong Sheet)?',
       huy: 'HỦY đơn %s? (hàng được cộng lại vào kho)', mo: 'Mở lại đơn %s (xóa ngày giao / hủy)?' };
@@ -852,8 +907,6 @@ function loadOrders() {
       if (confirm(ask[b.dataset.a].replace('%s', b.dataset.code)))
         act('setOrderStatus', [b.dataset.code, b.dataset.a], 'Đã cập nhật đơn ' + b.dataset.code + '.', loadOrders);
     });
-  }).withFailureHandler(e => { showMsg('Lỗi tải đơn: ' + e.message); $('app').classList.remove('loading'); })
-    .listOrders($('lFrom').value, $('lTo').value, PIN);
 }
 
 /* ---------------- kho: nhập hàng + xuất – nhập – tồn ---------------- */
@@ -1169,8 +1222,95 @@ $('pImp').onclick = () => openImport('prod');
 // đóng hộp thoại thì trả lại chữ nút Lưu
 $('mCancel').addEventListener('click', () => { $('mSave').textContent = 'Lưu'; $('mSave').disabled = false; });
 
+/* ---------------- tồn kho theo màu / size (quản lý + nhân viên) ---------------- */
+function renderTon() {
+  if (!D) return;
+  const q = norm($('tQ').value.trim()), f = $('tF').value;
+  const name = {}; D.products.forEach(p => { name[p.code] = p; });
+  const rows = D.stock.filter(s => {
+    const p = name[s.code] || {};
+    if (q && !norm([s.code, p.name, s.color, s.size].join(' ')).includes(q)) return false;
+    if (f === 'pos') return s.qty > 0;
+    if (f === 'neg') return s.qty < 0;
+    if (f === 'zero') return s.qty === 0;
+    return true;
+  });
+  const pos = D.stock.reduce((a, s) => a + Math.max(0, s.qty), 0), neg = D.stock.filter(s => s.qty < 0).length;
+  $('tonSum').textContent = `Tổng tồn ${pos} cái • ${neg} màu/size âm kho`;
+  $('tonBox').innerHTML = rows.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th>Mã</th><th>Tên sản phẩm</th><th>Màu</th><th>Size</th>
+      <th class="n">Đã nhập</th><th class="n">Đã bán</th><th class="n">Còn tồn</th><th>Trạng thái</th></tr></thead><tbody>
+    ${rows.map(s => { const p = name[s.code] || {};
+      return `<tr><td>${esc(s.code)}</td><td>${esc(p.name || '')}</td><td>${esc(s.color) || '—'}</td><td>${esc(s.size) || '—'}</td>
+        <td class="n">${s.inQty}</td><td class="n">${s.outQty}</td><td class="n ${qcls(s.qty)}"><b>${s.qty}</b></td>
+        <td class="st ${s.qty < 0 ? 'neg' : s.qty === 0 ? 'zero' : 'pos'}">${s.qty < 0 ? '⚠ Cần đặt ' + -s.qty : s.qty === 0 ? 'Hết hàng' : 'Còn hàng'}</td></tr>`; }).join('')}
+    </tbody></table></div>` : '<p style="color:var(--muted)">Không có dòng tồn kho phù hợp.</p>';
+}
+$('tQ').addEventListener('input', renderTon);
+$('tF').onchange = renderTon;
+$('tReload').onclick = () => load();
+
+/* ---------------- báo cáo ngày (quản lý) ---------------- */
+function initReport() { if (!$('bcFrom').value) bcRange('0'); }
+function bcRange(r) {
+  const t = new Date(); let f = new Date(t), to = new Date(t);
+  if (r === '1') { f.setDate(t.getDate() - 1); to = new Date(f); }
+  else if (r === '7') f.setDate(t.getDate() - 6);
+  else if (r === 'm') f = new Date(t.getFullYear(), t.getMonth(), 1);
+  else if (r === 'pm') { f = new Date(t.getFullYear(), t.getMonth() - 1, 1); to = new Date(t.getFullYear(), t.getMonth(), 0); }
+  $('bcFrom').value = ymd(f); $('bcTo').value = ymd(to); loadReport();
+}
+document.querySelectorAll('.bcq').forEach(b => b.onclick = () => bcRange(b.dataset.r));
+$('bcGo').onclick = loadReport;
+let BC = null;
+function loadReport() {
+  if ($('bcFrom').value > $('bcTo').value) return showMsg('Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.');
+  $('app').classList.add('loading');
+  run().withSuccessHandler(r => { $('app').classList.remove('loading'); BC = r; renderReport(); })
+    .withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Lỗi báo cáo: ' + e.message); })
+    .getDailyReport($('bcFrom').value, $('bcTo').value, PIN);
+}
+const dmy = s => s.split('-').reverse().join('/');
+function renderReport() {
+  const r = BC, k = r.kqkd;
+  const tbl = (head, obj) => `<table class="mini"><tr><th>${head}</th><th class="n">Số đơn</th><th class="n">Giá trị (VNĐ)</th></tr>
+    ${Object.keys(obj).map(x => `<tr><td>${esc(x)}</td><td class="n">${obj[x].count || '-'}</td><td class="n">${obj[x].value ? money(obj[x].value) : '-'}</td></tr>`).join('')}</table>`;
+  const cls = { 'Chờ hàng': 'b-cho', 'Đang xử lý': 'b-xl', 'Đã giao': 'b-giao', 'Đã hủy': 'b-huy' };
+  $('bcBox').innerHTML = `
+    <section><h2>Tổng kết từ ${dmy(r.from)} đến ${dmy(r.to)}</h2>
+      <div class="kpis">${kpi('Tổng đơn tạo', r.total)}${kpi('Đơn hợp lệ (không tính hủy)', r.valid)}
+        ${kpi('Giá trị đơn hợp lệ (VNĐ)', money(r.revenue))}${kpi('LỢI NHUẬN (VNĐ)', money(r.profit), '', r.profit < 0)}</div></section>
+    <div class="rep3">
+      <section><h2>Theo trạng thái đơn</h2>${tbl('Trạng thái', r.byStatus)}</section>
+      <section><h2>Theo loại hàng (đơn hợp lệ)</h2>${tbl('Loại hàng', r.byType)}
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Order = lúc lên đơn kho (đúng màu + size) không đủ hàng.</div></section>
+      <section><h2>Theo nhóm khách (đơn hợp lệ)</h2>${tbl('Nhóm khách', r.byGroup)}</section>
+    </div>
+    <div class="rep3">
+      <section><h2>Kết quả kinh doanh (đơn hợp lệ)</h2><table class="mini">
+        <tr><td>Doanh số đặt hàng</td><td class="n">${money(k.revenue)}</td></tr><tr><td>Giá vốn hàng bán</td><td class="n">${money(k.cost)}</td></tr>
+        <tr><td>Lãi gộp</td><td class="n">${money(k.gross)}</td></tr><tr><td>Chi phí trong kỳ</td><td class="n">${money(k.expense)}</td></tr>
+        <tr><th>LỢI NHUẬN</th><th class="n ${k.profit < 0 ? 'neg' : ''}">${money(k.profit)}</th></tr>
+        <tr><td>Tiền đã thu từ đơn trong kỳ</td><td class="n">${money(k.paid)}</td></tr><tr><td>Khách còn nợ từ đơn trong kỳ</td><td class="n debt">${money(k.debt)}</td></tr></table></section>
+      <section><h2>Cần đặt Taobao (hiện tại)</h2><table class="mini">
+        <tr><td>Số dòng màu/size cần đặt</td><td class="n neg">${r.short.rows}</td></tr><tr><td>Tổng số lượng cần đặt</td><td class="n neg">${r.short.qty}</td></tr></table>
+        <a href="#" id="bcToKho" style="font-size:12px">Xem chi tiết ở mục Kho →</a></section>
+    </div>
+    <section><div class="head2"><h2>Chi tiết đơn bán – ${r.lineCount} dòng hàng</h2><input id="bcQ" placeholder="Lọc mã đơn / khách / SP…" style="max-width:260px"></div>
+      <div class="tblwrap"><table class="xnt" id="bcTbl"><thead><tr><th>Ngày</th><th>Mã đơn</th><th>Khách</th><th>Sản phẩm</th><th>Màu</th><th>Size</th>
+        <th class="n">SL</th><th class="n">Thành tiền</th><th class="n">Đã thu</th><th class="n">Còn nợ</th><th>Trạng thái</th><th>Loại hàng</th><th class="n">Lãi</th></tr></thead>
+      <tbody>${r.lines.map(l => `<tr data-s="${esc(norm([l.code, l.cust, l.custName, l.prod, l.prodName].join(' ')))}"${l.cancelled ? ' style="text-decoration:line-through;color:#94A3B8"' : ''}>
+        <td>${esc(l.date)}</td><td>${esc(l.code)}</td><td>${esc(l.cust)} — ${esc(l.custName)}</td><td>${esc(l.prod)} — ${esc(l.prodName)}</td>
+        <td>${esc(l.color)}</td><td>${esc(l.size)}</td><td class="n">${l.qty}</td><td class="n">${money(l.amount)}</td><td class="n">${money(l.paid)}</td>
+        <td class="n ${l.debt > 0 ? 'debt' : ''}">${money(l.debt)}</td><td><span class="badge ${cls[l.status] || ''}">${esc(l.status)}</span></td>
+        <td>${esc(l.type)}</td><td class="n">${money(l.profit)}</td></tr>`).join('')}</tbody></table></div>
+      ${r.lineCount >= 500 ? '<div style="font-size:12px;color:var(--muted)">Chỉ hiện 500 dòng đầu – chọn khoảng ngày ngắn hơn để xem hết.</div>' : ''}</section>`;
+  $('bcQ').addEventListener('input', () => { const q = norm($('bcQ').value.trim());
+    document.querySelectorAll('#bcTbl tbody tr').forEach(tr => { tr.style.display = !q || tr.dataset.s.includes(q) ? '' : 'none'; }); });
+  $('bcToKho').onclick = ev => { ev.preventDefault(); showView('kho'); $('tF').value = 'neg'; renderTon(); };
+}
+
 load();
-loadDash();
+if (STAFF) showView('list'); else loadDash();
 </script>
 </body>
 </html>
