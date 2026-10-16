@@ -500,6 +500,7 @@
         </div>
         <datalist id="custList"></datalist>
         <label>Địa chỉ giao</label><input id="ncAddr">
+        <div><label>Mã KH (khách mới — tự đặt, để trống = tự tạo)</label><input id="ncCode" placeholder="vd: ngocmaihn" autocomplete="off"></div>
         <div class="cust-info" id="custInfo"></div>
         <div class="g2">
           <div><label>Nhóm khách (khách mới)</label>
@@ -633,7 +634,7 @@ function showCust() {
   const c = customer() || custByPhone($('ncPhone').value);
   $('custInfo').innerHTML = c ? `Khách cũ <b>${esc(c.code)}</b> · ${esc(c.name)} · ${esc(c.group)}`
     + (num(c.debt) > 0 ? ` · <span class="stock-low">Đang nợ ${esc(c.debt)}đ</span>` : '')
-    : ($('custSearch').value.trim() ? 'Khách mới – sẽ tự tạo mã KH khi tạo đơn.' : '');
+    : ($('custSearch').value.trim() ? ($('ncCode').value.trim() ? 'Khách mới – sẽ tạo với Mã KH: <b>' + esc($('ncCode').value.trim()) + '</b>' : 'Khách mới – sẽ tự tạo mã KH khi tạo đơn.') : '');
   return c;
 }
 $('custSearch').addEventListener('input', () => {
@@ -642,6 +643,7 @@ $('custSearch').addEventListener('input', () => {
   else delete $('custSearch').dataset.code;
   showCust();
 });
+$('ncCode').addEventListener('input', () => { showCust(); });
 $('ncPhone').addEventListener('input', () => {
   const c = custByPhone($('ncPhone').value);
   if (c && !customer()) { $('custSearch').value = c.name; $('custSearch').dataset.code = c.code; if (!$('ncAddr').value) $('ncAddr').value = c.address || ''; }
@@ -772,7 +774,10 @@ $('submit').onclick = () => {
   else {
     const name = $('custSearch').value.trim();
     if (!name) return showMsg('Nhập tên khách.');
-    payload.newCustomer = { name, phone: $('ncPhone').value.trim(), address: $('ncAddr').value.trim(), facebook: '', group: $('ncGroup').value };
+    const ncCode = $('ncCode').value.trim();
+    if (ncCode && /\s/.test(ncCode)) return showMsg('Mã KH không được chứa khoảng trắng.');
+    if (ncCode && D.customers.some(x => x.code.toLowerCase() === ncCode.toLowerCase())) return showMsg('Mã KH "' + ncCode + '" đã có — chọn khách cũ hoặc đặt mã khác.');
+    payload.newCustomer = { newCode: ncCode, name, phone: $('ncPhone').value.trim(), address: $('ncAddr').value.trim(), facebook: '', group: $('ncGroup').value };
   }
   $('app').classList.add('loading'); $('submit').textContent = 'Đang tạo đơn…';
   run().withSuccessHandler(showResult)
@@ -829,7 +834,7 @@ $('rCopy').onclick = () => {
 };
 $('rNew').onclick = () => {
   $('items').innerHTML = ''; $('note').value = ''; $('paid').value = 0; $('oDisc').value = 0; $('custSearch').value = ''; $('custInfo').innerHTML = '';
-  ['ncPhone','ncAddr'].forEach(i => $(i).value = '');
+  ['ncPhone','ncAddr','ncCode'].forEach(i => $(i).value = '');
   $('result').style.display = 'none'; $('form').style.display = ''; clearMsg(); recalc(); load();
 };
 
@@ -1084,12 +1089,20 @@ const GROUPS = ['Khách lẻ', 'Khách sỉ', 'Cộng tác viên'];
 function customerForm(c) {
   const isNew = !c;
   openForm(isNew ? 'Thêm khách hàng' : 'Sửa khách ' + c.code, [
+    { k: 'code', label: isNew ? 'Mã KH (tự đặt — để trống = tự tạo)' : 'Mã KH (không sửa được)', ph: 'vd: ngocmaihn', ro: isNew ? 0 : 1 },
     { k: 'name', label: 'Tên khách *' }, { k: 'phone', label: 'SĐT / Zalo', num: 1 },
     { k: 'group', label: 'Nhóm khách', opts: GROUPS }, { k: 'address', label: 'Địa chỉ' },
     { k: 'facebook', label: 'Link Facebook', full: 1 },
   ], c || { group: 'Khách lẻ' }, o => {
     if (!o.name) return alert('Nhập tên khách.');
     if (!isNew) o.code = c.code;
+    else {
+      const typed = (o.code || '').trim();
+      delete o.code;
+      if (typed && /\s/.test(typed)) return alert('Mã KH không được chứa khoảng trắng.');
+      if (typed && D.customers.some(x => x.code.toLowerCase() === typed.toLowerCase())) return alert('Mã KH "' + typed + '" đã có, đặt mã khác.');
+      if (typed) o.newCode = typed;
+    }
     act('saveCustomer', [o], r => 'Đã lưu khách ' + r.code + '.', renderCusts);
   });
 }
