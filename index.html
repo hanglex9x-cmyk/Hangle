@@ -264,6 +264,14 @@
   .vimg{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
   .vimg .pv{width:200px;height:200px;border-radius:12px;background:var(--soft);overflow:hidden;flex:none;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--muted)}
   .vimg .pv img{width:100%;height:100%;object-fit:cover}
+  .vimg .pv.gal{position:relative;padding:0}
+  .galNav{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:20px;line-height:1;cursor:pointer}
+  .galPrev{left:6px}.galNext{right:6px}
+  .galCount{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:2px 9px;border-radius:10px}
+  .galDel{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:15px;line-height:1;cursor:pointer}
+  .galThumbs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;max-width:200px}
+  .galThumbs img{width:44px;height:44px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent}
+  .galThumbs img.on{border-color:var(--accent)}
   .calc{background:var(--bg);border-radius:12px;padding:10px 14px;font-size:14px;margin-top:10px}
   .mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
   .ordtbl td{font-size:14px}
@@ -672,7 +680,7 @@ function renderPos() {
   if (!D) return;
   const q = norm($('posQ').value.trim());
   const ps = D.products.filter(p => !q || norm(p.code + ' ' + p.name).includes(q));
-  $('posTiles').innerHTML = ps.map(p => `<button type="button" data-code="${esc(p.code)}"><div class="im">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '▢'}</div>
+  $('posTiles').innerHTML = ps.map(p => `<button type="button" data-code="${esc(p.code)}"><div class="im">${firstImg(p) ? `<img src="${esc(firstImg(p))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '▢'}</div>
     <div class="t">${esc(p.code)} · ${esc(p.name)}<b>${money(p.price)} đ</b><span style="font-size:12px;color:${p.stock <= 0 ? 'var(--bad)' : 'var(--muted)'}">Tồn ${p.stock}</span></div></button>`).join('')
     || '<p style="color:var(--muted)">Không có sản phẩm phù hợp.</p>';
   document.querySelectorAll('#posTiles button').forEach(b => b.onclick = () => pickVariant(b.dataset.code));
@@ -684,7 +692,7 @@ function pickVariant(code) {
   const uniq = a => [...new Set(a.filter(Boolean))];
   const colors = uniq(vars.map(x => x.color).concat(D.colors)), sizes = uniq(vars.map(x => x.size).concat(D.sizes));
   openV(`<h2>${esc(p.code)} · ${esc(p.name)}</h2>
-    <div class="vimg"><div class="pv" style="width:150px;height:150px">${p.img ? `<img src="${esc(p.img)}" alt="" referrerpolicy="no-referrer">` : '▢'}</div>
+    <div class="vimg"><div class="pv" style="width:150px;height:150px">${firstImg(p) ? `<img src="${esc(firstImg(p))}" alt="" referrerpolicy="no-referrer">` : '▢'}</div>
       <div style="flex:1;min-width:220px"><div class="grid">
         <div><label>Màu</label><input id="pvColor" list="pvColors" value="${esc(vars[0] ? vars[0].color : '')}"><datalist id="pvColors">${colors.map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
         <div><label>Size</label><input id="pvSize" list="pvSizes" value="${esc(vars[0] ? vars[0].size : '')}"><datalist id="pvSizes">${sizes.map(z => `<option value="${esc(z)}">`).join('')}</datalist></div>
@@ -719,6 +727,8 @@ const findProd = code => D.products.find(x => x.code.toLowerCase() === String(co
 const thumb = (url, cls) => url
   ? `<img class="thumb ${cls || ''}" src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
   : `<div class="thumb noimg ${cls || ''}">▢</div>`;
+const imgList = p => String((p && p.img) || '').split('\n').map(s => s.trim()).filter(Boolean);
+const firstImg = p => imgList(p)[0] || '';
 
 function fillVariants(div) {
   const code = prodCode(div.querySelector('.code').value);
@@ -726,7 +736,7 @@ function fillVariants(div) {
   const meta = div.querySelector('.meta'), sum = div.querySelector('.sum');
   const color = div.querySelector('.color').value.trim(), size = div.querySelector('.size').value.trim();
   const qty = num(div.querySelector('.qty').value);
-  div.querySelector('.pic').innerHTML = p ? thumb(p.img, 'sm') : '';
+  div.querySelector('.pic').innerHTML = p ? thumb(firstImg(p), 'sm') : '';
   if (!p) {
     sum.textContent = 'Sản phẩm gõ tay'; div.querySelector('.amt').textContent = '';
     meta.textContent = code ? '⚠ Mã hàng chưa có trong MA_SP' : ''; return;
@@ -958,13 +968,13 @@ function renderStock() {
     const vars = D.stock.filter(x => x.code === p.code);
     const colors = [...new Set(vars.map(x => x.color).filter(Boolean))], sizes = [...new Set(vars.map(x => x.size).filter(Boolean))];
     const tag = stockTag(p.stock);
-    return `<div class="pc"><div class="img pView" data-code="${esc(p.code)}">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '▢'}</div>
+    return `<div class="pc"><div class="img pView" data-code="${esc(p.code)}">${firstImg(p) ? `<img src="${esc(firstImg(p))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '▢'}</div>
       <div class="b"><span class="code">${esc(p.code)}</span><span class="name">${esc(p.name)}</span>
         <span class="price">${money(p.price)} đ</span>
         <div class="chips">${colors.map(c => `<span class="chip">${esc(c)}</span>`).join('')}${sizes.map(z => `<span class="chip">${esc(z)}</span>`).join('')}</div>
         <span class="meta">Tồn <b style="color:${p.stock < 0 ? 'var(--bad)' : 'var(--fg)'}">${p.stock}</b> sp · <span class="tag ${tag[0]}">${tag[1]}</span></span>
         <div class="acts"><button type="button" class="btn-ghost pView" data-code="${esc(p.code)}">Chi tiết</button>
-          <button type="button" class="btn-ghost imgbtn qlOnly" data-code="${esc(p.code)}">${p.img ? 'Đổi ảnh' : '+ Ảnh'}</button>
+          <button type="button" class="btn-ghost imgbtn qlOnly" data-code="${esc(p.code)}">${firstImg(p) ? '+ Thêm ảnh' : '+ Ảnh'}</button>
           <button type="button" class="btn-ghost pEdit qlOnly" data-code="${esc(p.code)}">Sửa</button>
           <button type="button" class="btn-red pDel qlOnly" data-code="${esc(p.code)}">Xóa</button></div></div></div>`;
   }).join('') + '</div>' : '<p style="color:var(--muted)">Không tìm thấy sản phẩm.</p>';
@@ -1000,8 +1010,17 @@ function viewProduct(code) {
   const colors = [...new Set(vars.map(x => x.color))], sizes = [...new Set(vars.map(x => x.size))];
   const cellOf = (c, z) => vars.find(x => x.color === c && x.size === z);
   const ql = !STAFF && p.priceCny !== '' && p.priceCny !== undefined;
+  const galImgs = imgList(p);
+  const galMain = galImgs.length
+    ? `<img id="galMain" src="${esc(galImgs[0])}" alt="" referrerpolicy="no-referrer">`
+      + (galImgs.length > 1 ? `<button type="button" class="galNav galPrev" id="galPrev">‹</button><button type="button" class="galNav galNext" id="galNext">›</button><span class="galCount" id="galCount">1 / ${galImgs.length}</span>` : '')
+      + `<button type="button" class="galDel qlOnly" id="galDel" title="Xóa ảnh này">×</button>`
+    : '▢';
+  const galThumbs = galImgs.length > 1
+    ? `<div class="galThumbs" id="galThumbs">${galImgs.map((u, i) => `<img src="${esc(u)}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join('')}</div>`
+    : '';
   openV(`<h2>${esc(p.code)} · ${esc(p.name)}</h2>
-    <div class="vimg"><div class="pv">${p.img ? `<img src="${esc(p.img)}" alt="" referrerpolicy="no-referrer">` : '▢'}</div>
+    <div class="vimg"><div style="flex:none"><div class="pv gal">${galMain}</div>${galThumbs}</div>
       <div style="flex:1;min-width:220px">
         <div class="calc">Giá bán <b>${money(p.price)} đ</b> · Tồn <b>${p.stock}</b> sp
           ${ql ? `<br><span class="qlOnly">Giá nhập ${esc(p.priceCny)} ¥ · Ship + phí DV ${money(p.ship)} đ</span>` : ''}</div>
@@ -1016,6 +1035,21 @@ function viewProduct(code) {
     <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Đóng</button>
       <button type="button" class="btn-teal" id="vToOrder">＋ Tạo đơn với sản phẩm này</button></div>`);
   $('vToOrder').onclick = () => { closeV(); showView('new'); pickVariant(p.code); };
+  let galI = 0;
+  const updGal = () => {
+    const gm = $('galMain'); if (gm && galImgs[galI]) gm.src = galImgs[galI];
+    const gc = $('galCount'); if (gc) gc.textContent = (galI + 1) + ' / ' + galImgs.length;
+    document.querySelectorAll('#galThumbs img').forEach(t => t.classList.toggle('on', +t.dataset.i === galI));
+  };
+  if ($('galPrev')) $('galPrev').onclick = () => { galI = (galI - 1 + galImgs.length) % galImgs.length; updGal(); };
+  if ($('galNext')) $('galNext').onclick = () => { galI = (galI + 1) % galImgs.length; updGal(); };
+  document.querySelectorAll('#galThumbs img').forEach(t => t.onclick = () => { galI = +t.dataset.i; updGal(); });
+  if ($('galDel')) $('galDel').onclick = () => {
+    if (!confirm('Xóa ảnh này khỏi sản phẩm ' + p.code + '?')) return;
+    run().withSuccessHandler(r => { const q = findProd(r.code); if (q) q.img = r.img; viewProduct(code); showMsg('Đã xóa ảnh.', true); })
+      .withFailureHandler(e => showMsg('Không xóa được ảnh: ' + e.message))
+      .deleteProductImage(code, galImgs[galI], PIN);
+  };
 }
 const PROD_FIELDS = isNew => [
   { k: 'code', label: 'Mã hàng *', ro: !isNew, ph: 'vd: SP08' }, { k: 'name', label: 'Tên sản phẩm *' },
@@ -1046,9 +1080,9 @@ function saveProductWithImage(o, file) {
   $('app').classList.add('loading'); $('mSave').disabled = true;
   run().withSuccessHandler(r => {
     shrink(file, 800, data => run().withSuccessHandler(r2 => {
-      const p = D ? findProd(r2.code) : null; if (p) p.img = r2.img + '&t=' + Date.now();
+      const p = D ? findProd(r2.code) : null; if (p) p.img = r2.img;
       $('mSave').disabled = false; $('app').classList.remove('loading');
-      closeForm(); showMsg('Đã lưu sản phẩm ' + r2.code + ' kèm ảnh. ✔', true); load();
+      closeForm(); showMsg('Đã lưu sản phẩm ' + r2.code + ' kèm ảnh (ảnh ' + imgList(p).length + '). ✔', true); load();
     }).withFailureHandler(e => {
       $('mSave').disabled = false; $('app').classList.remove('loading');
       closeForm(); showMsg('Đã lưu sản phẩm ' + r.code + ' nhưng không lưu được ảnh: ' + e.message + ' (bấm "+ Ảnh" để thêm sau).'); load();
@@ -1091,8 +1125,8 @@ $('imgFile').onchange = () => {
   const f = $('imgFile').files[0]; if (!f || !imgFor) return;
   $('app').classList.add('loading');
   shrink(f, 800, data => run().withSuccessHandler(r => {
-    const p = findProd(r.code); if (p) p.img = r.img + '&t=' + Date.now();
-    $('app').classList.remove('loading'); renderStock(); showMsg('Đã lưu ảnh cho ' + r.code + ' (MA_SP cột Ảnh).', true);
+    const p = findProd(r.code); if (p) p.img = r.img;
+    $('app').classList.remove('loading'); renderStock(); showMsg('Đã thêm ảnh cho ' + r.code + ' (ảnh ' + imgList(p).length + ').', true);
   }).withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Không lưu được ảnh: ' + e.message); })
     .saveProductImage(imgFor, data, PIN));
 };
@@ -1229,7 +1263,7 @@ function itemCell(t) {
     const k = [p.name, p.code].find(k => k && t.toLowerCase().startsWith(k.toLowerCase() + ' '));
     if (k && (!best || k.length > best.k.length)) best = { p, k };
   });
-  return `<div class="it">${thumb(best ? best.p.img : '', 'sm')}<span>${best && best.k !== best.p.code ? `<b>${esc(best.p.code)}</b> ` : ''}${esc(t)}</span></div>`;
+  return `<div class="it">${thumb(best ? firstImg(best.p) : '', 'sm')}<span>${best && best.k !== best.p.code ? `<b>${esc(best.p.code)}</b> ` : ''}${esc(t)}</span></div>`;
 }
 function renderOrders() {
     const res = LAST_ORDERS, s = res.summary;
@@ -1596,7 +1630,7 @@ function renderTon() {
   $('tonBox').innerHTML = rows.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th style="width:56px">Ảnh</th><th>Mã</th><th>Tên sản phẩm</th><th>Màu</th><th>Size</th>
       <th class="n">Đã nhập</th><th class="n">Đã bán</th><th class="n">Còn tồn</th><th>Trạng thái</th></tr></thead><tbody>
     ${rows.map(s => { const p = name[s.code] || {};
-      return `<tr><td>${thumb(p.img, 'sm')}</td><td>${esc(s.code)}</td><td>${esc(p.name || '')}</td><td>${esc(s.color) || '—'}</td><td>${esc(s.size) || '—'}</td>
+      return `<tr><td>${thumb(firstImg(p), 'sm')}</td><td>${esc(s.code)}</td><td>${esc(p.name || '')}</td><td>${esc(s.color) || '—'}</td><td>${esc(s.size) || '—'}</td>
         <td class="n">${s.inQty}</td><td class="n">${s.outQty}</td><td class="n ${qcls(s.qty)}"><b>${s.qty}</b></td>
         <td class="st"><span class="tag ${stockTag(s.qty)[0]}">${stockTag(s.qty)[1]}</span></td></tr>`; }).join('')}
     </tbody></table></div>` : '<p style="color:var(--muted)">Không có dòng tồn kho phù hợp.</p>';
