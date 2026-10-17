@@ -920,7 +920,7 @@ function openForm(title, fields, values, onSave) {
   $('modal').style.display = 'flex';
   const first = $('mBody').querySelector('input:not([readonly]),select'); if (first) first.focus();
 }
-function closeForm() { $('modal').style.display = 'none'; mSubmit = null; }
+function closeForm() { $('modal').style.display = 'none'; mSubmit = null; prodImgFile = null; }
 $('mCancel').onclick = closeForm;
 $('mForm').onsubmit = ev => {
   ev.preventDefault();
@@ -1022,13 +1022,51 @@ const PROD_FIELDS = isNew => [
   { k: 'price', label: 'Giá bán (VNĐ)', num: 1 }, { k: 'priceCny', label: 'Giá nhập (tệ)', num: 1 },
   { k: 'ship', label: 'Ship + phí DV /sp (VNĐ)', num: 1 }, { k: 'link', label: 'Link Taobao', full: 1 },
 ];
+let prodImgFile = null; // file ảnh chọn lúc tạo SP mới
+function prodImgRow() {
+  return `<div class="full"><label>Ảnh sản phẩm</label>
+    <div style="display:flex;gap:10px;align-items:center">
+      <img id="prodImgPrev" alt="" style="display:none;width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">
+      <button type="button" class="btn-ghost" id="prodImgPick">Chọn ảnh…</button>
+      <span id="prodImgName" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <input type="file" id="prodImgFile" accept="image/*" style="display:none"></div>`;
+}
+function wireProdImg() {
+  prodImgFile = null;
+  $('prodImgPick').onclick = () => $('prodImgFile').click();
+  $('prodImgFile').onchange = () => {
+    const f = $('prodImgFile').files[0]; prodImgFile = f || null;
+    if (f) { $('prodImgPrev').src = URL.createObjectURL(f); $('prodImgPrev').style.display = 'block'; $('prodImgName').textContent = f.name; }
+    else { $('prodImgPrev').style.display = 'none'; $('prodImgName').textContent = ''; }
+  };
+}
+// tạo SP mới kèm ảnh: lưu SP trước, rồi thu nhỏ + gửi ảnh lên Drive (dùng lại saveProductImage)
+function saveProductWithImage(o, file) {
+  $('app').classList.add('loading'); $('mSave').disabled = true;
+  run().withSuccessHandler(r => {
+    shrink(file, 800, data => run().withSuccessHandler(r2 => {
+      const p = D ? findProd(r2.code) : null; if (p) p.img = r2.img + '&t=' + Date.now();
+      $('mSave').disabled = false; $('app').classList.remove('loading');
+      closeForm(); showMsg('Đã lưu sản phẩm ' + r2.code + ' kèm ảnh. ✔', true); load();
+    }).withFailureHandler(e => {
+      $('mSave').disabled = false; $('app').classList.remove('loading');
+      closeForm(); showMsg('Đã lưu sản phẩm ' + r.code + ' nhưng không lưu được ảnh: ' + e.message + ' (bấm "+ Ảnh" để thêm sau).'); load();
+    }).saveProductImage(r.code, data, PIN));
+  }).withFailureHandler(e => {
+    $('mSave').disabled = false; $('app').classList.remove('loading');
+    if ($('modal').style.display === 'flex' && !/PIN:/.test(e.message)) alert(e.message); else { closeForm(); showMsg(e.message); }
+  }).saveProduct(o, PIN);
+}
 function productForm(p) {
   const isNew = !p;
   openForm(isNew ? 'Thêm sản phẩm' : 'Sửa sản phẩm ' + p.code, PROD_FIELDS(isNew), p || {}, o => {
     if (!o.code || !o.name) return alert('Cần nhập mã hàng và tên sản phẩm.');
     o.isNew = isNew; ['price', 'priceCny', 'ship'].forEach(k => { o[k] = o[k] === '' ? '' : num(o[k]); });
-    act('saveProduct', [o], r => 'Đã lưu sản phẩm ' + r.code + (isNew ? '. Bấm "+ Thêm ảnh" để thêm ảnh.' : '.'));
+    if (isNew && prodImgFile) { saveProductWithImage(o, prodImgFile); return; }
+    act('saveProduct', [o], r => 'Đã lưu sản phẩm ' + r.code + (isNew ? '. Bấm "+ Ảnh" để thêm ảnh sau.' : '.'));
   });
+  if (isNew) { $('mBody').insertAdjacentHTML('beforeend', prodImgRow()); wireProdImg(); }
 }
 $('pAdd').onclick = () => productForm(null);
 $('sQ').addEventListener('input', renderStock);
