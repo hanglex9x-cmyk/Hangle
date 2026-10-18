@@ -691,14 +691,16 @@ function pickVariant(code) {
   const vars = D.stock.filter(x => x.code === p.code);
   const uniq = a => [...new Set(a.filter(Boolean))];
   const colors = uniq(vars.map(x => x.color).concat(D.colors)), sizes = uniq(vars.map(x => x.size).concat(D.sizes));
+  const gp2 = galParts(p, 'pv', false);
   openV(`<h2>${esc(p.code)} · ${esc(p.name)}</h2>
-    <div class="vimg"><div class="pv" style="width:150px;height:150px">${firstImg(p) ? `<img src="${esc(firstImg(p))}" alt="" referrerpolicy="no-referrer">` : '▢'}</div>
+    <div class="vimg"><div style="flex:none"><div class="pv gal" style="width:150px;height:150px">${gp2.main}</div>${gp2.thumbs}</div>
       <div style="flex:1;min-width:220px"><div class="grid">
         <div><label>Màu</label><input id="pvColor" list="pvColors" value="${esc(vars[0] ? vars[0].color : '')}"><datalist id="pvColors">${colors.map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
         <div><label>Size</label><input id="pvSize" list="pvSizes" value="${esc(vars[0] ? vars[0].size : '')}"><datalist id="pvSizes">${sizes.map(z => `<option value="${esc(z)}">`).join('')}</datalist></div>
         <div><label>Số lượng</label><input id="pvQty" inputmode="numeric" value="1"></div></div>
         <div class="calc" id="pvTon"></div></div></div>
     <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Hủy</button><button type="button" class="btn-teal" id="pvAdd">Thêm vào giỏ</button></div>`);
+  galWire('pv', gp2.imgs);
   const ton = () => {
     const c = $('pvColor').value.trim().toLowerCase(), z = $('pvSize').value.trim().toLowerCase();
     const x = vars.find(v => v.color.toLowerCase() === c && v.size.toLowerCase() === z);
@@ -729,6 +731,31 @@ const thumb = (url, cls) => url
   : `<div class="thumb noimg ${cls || ''}">▢</div>`;
 const imgList = p => String((p && p.img) || '').split('\n').map(s => s.trim()).filter(Boolean);
 const firstImg = p => imgList(p)[0] || '';
+// Gallery dùng chung: galParts(p, idp, withDel) -> {main, thumbs, imgs}; galWire(idp, imgs, onDel) gắn sự kiện
+function galParts(p, idp, withDel) {
+  const imgs = imgList(p);
+  const main = imgs.length
+    ? `<img id="${idp}Main" src="${esc(imgs[0])}" alt="" referrerpolicy="no-referrer">`
+      + (imgs.length > 1 ? `<button type="button" class="galNav galPrev" id="${idp}Prev">‹</button><button type="button" class="galNav galNext" id="${idp}Next">›</button><span class="galCount" id="${idp}Count">1 / ${imgs.length}</span>` : '')
+      + (withDel ? `<button type="button" class="galDel qlOnly" id="${idp}Del" title="Xóa ảnh này">×</button>` : '')
+    : '▢';
+  const thumbs = imgs.length > 1
+    ? `<div class="galThumbs" id="${idp}Thumbs">${imgs.map((u, i) => `<img src="${esc(u)}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join('')}</div>`
+    : '';
+  return { main, thumbs, imgs };
+}
+function galWire(idp, imgs, onDel) {
+  let i = 0;
+  const upd = () => {
+    const gm = $(idp + 'Main'); if (gm && imgs[i]) gm.src = imgs[i];
+    const gc = $(idp + 'Count'); if (gc) gc.textContent = (i + 1) + ' / ' + imgs.length;
+    document.querySelectorAll('#' + idp + 'Thumbs img').forEach(t => t.classList.toggle('on', +t.dataset.i === i));
+  };
+  if ($(idp + 'Prev')) $(idp + 'Prev').onclick = () => { i = (i - 1 + imgs.length) % imgs.length; upd(); };
+  if ($(idp + 'Next')) $(idp + 'Next').onclick = () => { i = (i + 1) % imgs.length; upd(); };
+  document.querySelectorAll('#' + idp + 'Thumbs img').forEach(t => t.onclick = () => { i = +t.dataset.i; upd(); });
+  if (onDel && $(idp + 'Del')) $(idp + 'Del').onclick = () => onDel(imgs[i]);
+}
 
 function fillVariants(div) {
   const code = prodCode(div.querySelector('.code').value);
@@ -1010,17 +1037,9 @@ function viewProduct(code) {
   const colors = [...new Set(vars.map(x => x.color))], sizes = [...new Set(vars.map(x => x.size))];
   const cellOf = (c, z) => vars.find(x => x.color === c && x.size === z);
   const ql = !STAFF && p.priceCny !== '' && p.priceCny !== undefined;
-  const galImgs = imgList(p);
-  const galMain = galImgs.length
-    ? `<img id="galMain" src="${esc(galImgs[0])}" alt="" referrerpolicy="no-referrer">`
-      + (galImgs.length > 1 ? `<button type="button" class="galNav galPrev" id="galPrev">‹</button><button type="button" class="galNav galNext" id="galNext">›</button><span class="galCount" id="galCount">1 / ${galImgs.length}</span>` : '')
-      + `<button type="button" class="galDel qlOnly" id="galDel" title="Xóa ảnh này">×</button>`
-    : '▢';
-  const galThumbs = galImgs.length > 1
-    ? `<div class="galThumbs" id="galThumbs">${galImgs.map((u, i) => `<img src="${esc(u)}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join('')}</div>`
-    : '';
+  const gp = galParts(p, 'gal', true);
   openV(`<h2>${esc(p.code)} · ${esc(p.name)}</h2>
-    <div class="vimg"><div style="flex:none"><div class="pv gal">${galMain}</div>${galThumbs}</div>
+    <div class="vimg"><div style="flex:none"><div class="pv gal">${gp.main}</div>${gp.thumbs}</div>
       <div style="flex:1;min-width:220px">
         <div class="calc">Giá bán <b>${money(p.price)} đ</b> · Tồn <b>${p.stock}</b> sp
           ${ql ? `<br><span class="qlOnly">Giá nhập ${esc(p.priceCny)} ¥ · Ship + phí DV ${money(p.ship)} đ</span>` : ''}</div>
@@ -1035,21 +1054,12 @@ function viewProduct(code) {
     <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Đóng</button>
       <button type="button" class="btn-teal" id="vToOrder">＋ Tạo đơn với sản phẩm này</button></div>`);
   $('vToOrder').onclick = () => { closeV(); showView('new'); pickVariant(p.code); };
-  let galI = 0;
-  const updGal = () => {
-    const gm = $('galMain'); if (gm && galImgs[galI]) gm.src = galImgs[galI];
-    const gc = $('galCount'); if (gc) gc.textContent = (galI + 1) + ' / ' + galImgs.length;
-    document.querySelectorAll('#galThumbs img').forEach(t => t.classList.toggle('on', +t.dataset.i === galI));
-  };
-  if ($('galPrev')) $('galPrev').onclick = () => { galI = (galI - 1 + galImgs.length) % galImgs.length; updGal(); };
-  if ($('galNext')) $('galNext').onclick = () => { galI = (galI + 1) % galImgs.length; updGal(); };
-  document.querySelectorAll('#galThumbs img').forEach(t => t.onclick = () => { galI = +t.dataset.i; updGal(); });
-  if ($('galDel')) $('galDel').onclick = () => {
+  galWire('gal', gp.imgs, url => {
     if (!confirm('Xóa ảnh này khỏi sản phẩm ' + p.code + '?')) return;
     run().withSuccessHandler(r => { const q = findProd(r.code); if (q) q.img = r.img; viewProduct(code); showMsg('Đã xóa ảnh.', true); })
       .withFailureHandler(e => showMsg('Không xóa được ảnh: ' + e.message))
-      .deleteProductImage(code, galImgs[galI], PIN);
-  };
+      .deleteProductImage(code, url, PIN);
+  });
 }
 const PROD_FIELDS = isNew => [
   { k: 'code', label: 'Mã hàng *', ro: !isNew, ph: 'vd: SP08' }, { k: 'name', label: 'Tên sản phẩm *' },
