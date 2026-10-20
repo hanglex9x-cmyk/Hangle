@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<title>Quản lý bán hàng</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1F3A5F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{--bg:#f5f5f5;--panel:#fff;--fg:#333;--muted:#999;--line:#e8e8e8;--accent:#ee4d2d;--accent-fg:#fff;--soft:#fff0ea;
+        --ok:#1f7a4d;--ok-soft:#e2f3ea;--warn:#a35d00;--warn-soft:#fdf0dc;--bad:#b3261e;--bad-soft:#fbe4e2;--info:#1f5fa8;--info-soft:#e4eefa;
+        --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05)}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151311;--panel:#1f1c19;--fg:#efe9e3;--muted:#a69d94;--line:#35302b;
+        --accent:#ff7a4d;--accent-fg:#1a0f0a;--soft:#3a2219;--ok:#5fd09a;--ok-soft:#173a29;--warn:#ffb85c;--warn-soft:#3b2a12;--bad:#ff8a80;
+        --bad-soft:#3e1c19;--info:#8cbcff;--info-soft:#1a2a40;--shadow:none}}
+  :root{--navy:var(--fg);--steel:var(--info);--teal:var(--accent);--teal-t:var(--soft);--text:var(--fg);
+        --red:var(--bad);--red-t:var(--bad-soft);--amber:var(--warn);--amber-t:var(--warn-soft);--green:var(--ok);--green-t:var(--ok-soft)}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:var(--bg);font-size:14px}
+  header{background:var(--navy);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+  header h1{font-size:18px;margin:0}
+  header .code{background:var(--teal);padding:4px 10px;border-radius:4px;font-weight:bold}
+  main{max-width:none;margin:0 auto;padding:16px}
+  section{background:#fff;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;padding:14px;margin-bottom:14px}
+  h2{font-size:13px;text-transform:uppercase;color:var(--navy);margin:0 0 10px;letter-spacing:.3px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  input,select,textarea{width:100%;padding:9px 10px;border:1px solid #CBD5E1;border-radius:4px;font:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);border-color:var(--teal)}
+  .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .tabs{display:flex;gap:6px;margin-bottom:10px}
+  .tabs button{flex:1}
+  button{font:inherit;border:0;border-radius:4px;padding:10px 14px;cursor:pointer;font-weight:bold}
+  .btn{background:var(--navy);color:#fff}
+  .btn-teal{background:var(--teal);color:#fff}
+  .btn-ghost{background:#fff;color:var(--navy);border:1px solid #CBD5E1}
+  .btn-ghost.on{background:var(--teal-t);border-color:var(--teal);color:var(--teal)}
+  .btn-x{background:var(--red-t);color:var(--red);padding:8px 10px}
+  .cust-info{margin-top:8px;font-size:12px;color:var(--muted)}
+  .item{display:grid;gap:8px;grid-template-columns:2.2fr 1fr 1fr .7fr 1fr auto;align-items:end;
+        padding:10px 0;border-bottom:1px dashed var(--line)}
+  .item .meta{grid-column:1/-1;font-size:12px;color:var(--muted)}
+  .stock-ok{color:var(--green);font-weight:bold}.stock-low{color:var(--amber);font-weight:bold}
+  @media (max-width:640px){.item{grid-template-columns:1fr 1fr}.item .pcode{grid-column:1/-1}}
+  .totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .tot{background:var(--bg);border-radius:4px;padding:10px}
+  .tot b{display:block;font-size:20px;color:var(--navy);margin-top:4px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .msg{padding:10px 12px;border-radius:4px;margin-bottom:12px;display:none}
+  .msg.err{display:block;background:var(--red-t);color:var(--red)}
+  .msg.ok{display:block;background:var(--green-t);color:var(--green)}
+  #result{display:none}
+  #result .big{font-size:22px;color:var(--navy);font-weight:bold}
+  .loading{opacity:.6;pointer-events:none}
+  textarea{min-height:70px}
+  nav{display:flex;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  nav button{flex:1;background:#fff;color:var(--muted);border-radius:0;border-bottom:3px solid transparent}
+  nav button.on{color:var(--navy);border-bottom-color:var(--teal)}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .quick button{padding:6px 10px;font-size:12px}
+  .ord{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fff}
+  .ord-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .ord-top b{color:var(--navy)}
+  .ord .items{font-size:12px;color:var(--muted);margin:6px 0}
+  .ord .money{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;align-items:center}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
+  .b-cho{background:var(--amber-t);color:var(--amber)}.b-xl{background:#DBEAFE;color:#1E40AF}
+  .b-giao{background:var(--green-t);color:var(--green)}.b-huy{background:#F1F5F9;color:#64748B;text-decoration:line-through}
+  .debt{color:var(--red);font-weight:bold}
+  .pdfbtn{padding:6px 10px;font-size:12px;margin-left:auto}
+  nav button{padding:10px 4px;font-size:13px}
+  .thumb{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--bg);flex:none}
+  .thumb.sm{width:36px;height:36px}
+  .noimg{display:flex;align-items:center;justify-content:center;color:#94A3B8;font-size:20px}
+  .item .meta{display:flex;gap:10px;align-items:flex-start}
+  .prod{display:flex;gap:12px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fff}
+  .prod .body{flex:1;min-width:0}
+  .prod .head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .prod .imgbox{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .prod .imgbox .thumb{width:72px;height:72px}
+  .linkbtn{background:none;padding:0;color:var(--steel);font-size:11px;font-weight:normal;text-decoration:underline}
+  .vt{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+  .vt th,.vt td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}
+  .vt td.n,.vt th.n{text-align:right}
+  .neg{color:var(--red);font-weight:bold}.zero{color:var(--muted)}.pos{color:var(--green);font-weight:bold}
+  .bigstock{font-size:18px;font-weight:bold}
+  .line{display:flex;gap:8px;align-items:center;font-size:12px;padding:4px 0}
+  .line.x{text-decoration:line-through;color:#94A3B8}
+  .cinfo{display:grid;gap:4px 16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));font-size:13px}
+  .cinfo span{color:var(--muted)}
+  #pinGate{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+  #pinGate form{background:#fff;border-radius:8px;padding:20px;width:100%;max-width:320px}
+  #pinGate input{font-size:22px;letter-spacing:6px;text-align:center;margin:10px 0}
+  #pinGate button{width:100%}
+  #pinMsg{color:var(--red);font-size:13px;min-height:16px}
+  #pinOut{background:none;color:#CBD5E1;font-weight:normal;font-size:12px;padding:4px 8px}
+  #modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:flex-start;justify-content:center;z-index:15;padding:24px 16px;overflow:auto}
+  #modal form{background:#fff;border-radius:8px;padding:18px;width:100%;max-width:560px}
+  #modal .actions{margin-top:14px}
+  .full{grid-column:1/-1}
+  .rowbtns{display:flex;gap:6px;flex-wrap:wrap}
+  .rowbtns button{padding:5px 9px;font-size:12px}
+  .btn-red{background:#fff;color:var(--red);border:1px solid #FCA5A5}
+  .crow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);
+        border-radius:6px;padding:8px 12px;margin-bottom:6px;background:#fff;font-size:13px}
+  .crow .who{flex:1;min-width:180px}
+  .crow .who span{color:var(--muted);font-size:12px}
+  .head2{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+  .head2 h2{margin:0}
+  .rec{display:grid;gap:8px;grid-template-columns:2.2fr 1fr 1fr .7fr 1fr auto;align-items:end;padding:8px 0;border-bottom:1px dashed var(--line)}
+  @media (max-width:640px){.rec{grid-template-columns:1fr 1fr}.rec .pcode{grid-column:1/-1}}
+  .xnt{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+  .xnt th,.xnt td{padding:6px;border-bottom:1px solid var(--line);text-align:left}
+  .xnt th{background:var(--bg)}
+  .xnt .n{text-align:right}
+  .xnt tfoot td{font-weight:bold;border-top:2px solid var(--navy)}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+  nav{overflow-x:auto;scrollbar-width:none}
+  nav button{flex:1 0 auto;white-space:nowrap;padding:10px 12px}
+  .kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .kpi{background:var(--bg);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--muted)}
+  .kpi b{display:block;font-size:22px;color:var(--navy);margin:2px 0}
+  .kpi.warn b{color:var(--red)}
+  .delta{font-size:11px;font-weight:bold}.delta.up{color:var(--green)}.delta.down{color:var(--red)}
+  .bars{display:flex;align-items:flex-end;gap:6px;height:180px;padding:22px 4px 0;border-bottom:1px solid #CBD5E1}
+  .bar{flex:1;position:relative;height:100%;display:flex;align-items:flex-end;cursor:default}
+  .bar i{display:block;width:100%;background:var(--teal);border-radius:4px 4px 0 0;min-height:1px}
+  .bar:hover i{background:var(--navy)}
+  .bar .lbl{position:absolute;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text);white-space:nowrap}
+  .bar .tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;
+            font-size:11px;padding:6px 8px;border-radius:4px;white-space:nowrap;z-index:3;margin-bottom:4px}
+  .bar:hover .tip{display:block}
+  .axis{display:flex;gap:6px;padding:4px 4px 0;font-size:11px;color:var(--muted)}
+  .axis span{flex:1;text-align:center}.axis span.cur{color:var(--navy);font-weight:bold}
+  .two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .mini{width:100%;border-collapse:collapse;font-size:12px}
+  .mini td,.mini th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+  .mini .n{text-align:right;white-space:nowrap}
+  details summary{cursor:pointer;font-size:12px;color:var(--steel);margin-top:8px}
+  .imp-sum{font-size:13px;margin:8px 0}
+  .imp-sum b{margin-right:10px}
+  .imp-prev{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+  .imp-prev table{width:100%;border-collapse:collapse;font-size:12px}
+  .imp-prev td,.imp-prev th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  .imp-prev th{background:var(--bg);position:sticky;top:0}
+  .imp-prev tr.bad td{color:var(--red)}
+  .imp-prev tr.dup td{color:var(--amber)}
+  .head2 .rowbtns button{padding:7px 12px;font-size:13px}
+  body.staff .qlOnly{display:none!important}
+  .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text);margin-top:10px;cursor:pointer}
+  .chk input{width:auto}
+  .rep3{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .xnt td.st{white-space:nowrap}
+  /* máy tính: các mục thành thanh dọc bên trái */
+  @media (min-width:900px){
+    body{padding-left:210px}
+    nav{position:fixed;top:0;left:0;bottom:0;width:210px;flex-direction:column;overflow-y:auto;
+        background:var(--panel);border-right:1px solid var(--line);padding:0 0 12px;z-index:6}
+    body.staff nav::before{content:'Nhân viên bán hàng'}
+    nav::before{content:'Quản lý bán hàng';display:block;color:var(--accent);font-weight:bold;font-size:15px;
+        padding:18px 18px 14px;border-bottom:1px solid var(--line);margin-bottom:8px}
+    nav button{flex:none;text-align:left;background:transparent;color:var(--muted);border:0;border-left:3px solid transparent;
+        border-radius:0;padding:12px 18px;font-size:14px;font-weight:normal}
+    nav button:hover{background:var(--soft);color:var(--accent)}
+    nav button.on{color:var(--accent);font-weight:bold;border-left-color:var(--accent);background:var(--soft)}
+    header{position:sticky;top:0;z-index:5}
+    main{max-width:none;padding:20px 24px}
+  }
+  /* ================= giao diện mới (theo mẫu WebBanHang) ================= */
+  body{font:15px/1.5 "Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+  input,select,textarea{border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--fg);padding:8px 10px}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+  label{font-size:13px;color:var(--muted)}
+  button{border-radius:9px;font-weight:600}
+  .btn{background:var(--accent);color:#fff}
+  .btn-teal{background:var(--accent);color:var(--accent-fg)}
+  .btn-ghost{background:var(--panel);color:var(--fg);border:1px solid var(--line);font-weight:500}
+  .btn-ghost:hover{border-color:var(--muted)}
+  .btn-ghost.on{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+  .btn-red{background:var(--panel);color:var(--bad);border:1px solid var(--line);font-weight:500}
+  .btn-x{background:var(--bad-soft);color:var(--bad)}
+  header{background:linear-gradient(180deg,#ff7337,#ee4d2d);color:#fff;border:0;padding:14px 22px}
+  header h1{font-size:22px;font-weight:700}
+  header .code{background:var(--soft);color:var(--accent);border-radius:99px;padding:3px 12px;font-size:13px}
+  #pinOut{color:#fff}
+  section{background:var(--panel);border:1px solid var(--line);border-left:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+  h2{font-size:15px;text-transform:none;letter-spacing:0;color:var(--fg);font-weight:700}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13px;box-shadow:var(--shadow)}
+  .kpi b{font-size:24px;color:var(--fg);font-variant-numeric:tabular-nums}
+  section .kpi{box-shadow:none;background:var(--bg);border-color:transparent}
+  .tot{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);font-size:13px;color:var(--muted)}
+  .tot b{color:var(--fg);font-size:22px}
+  .msg{border-radius:10px}
+  .tblwrap{background:var(--panel);border:1px solid var(--line);border-radius:14px}
+  .xnt,.mini,.vt{font-size:14px;background:transparent}
+  .xnt th,.mini th,.vt th{font-size:12.5px;color:var(--muted);font-weight:600;background:var(--bg);white-space:nowrap}
+  .xnt th,.xnt td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .xnt .n,.mini .n{font-variant-numeric:tabular-nums}
+  .xnt tfoot td{border-top:1px solid var(--line);background:var(--bg)}
+  .crow,.ord{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .thumb{border-color:var(--line);background:var(--soft)}
+  .badge,.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap}
+  .b-cho,.t-warn{background:var(--warn-soft);color:var(--warn)}
+  .b-xl,.t-info{background:var(--info-soft);color:var(--info)}
+  .b-giao,.t-ok{background:var(--ok-soft);color:var(--ok)}
+  .b-huy,.t-mute{background:var(--bg);color:var(--muted);border:1px solid var(--line);text-decoration:none}
+  .t-bad{background:var(--bad-soft);color:var(--bad)}
+  #modal,#pinGate,.vmodal{background:rgba(0,0,0,.45)}
+  #modal form,#pinGate form,.vbox{background:var(--panel);color:var(--fg);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .bar i{background:var(--accent)}
+  .bar:hover i{background:var(--fg)}
+  /* menu trái có biểu tượng */
+  nav svg{width:18px;height:18px;flex:none}
+  nav button{display:flex;gap:9px;align-items:center}
+  nav{background:var(--panel);border-bottom:1px solid var(--line)}
+  nav button{background:none;color:var(--fg);font-weight:500}
+  nav button.on{color:var(--accent)}
+  @media (min-width:900px){
+    body{padding-left:224px}
+    nav{width:224px;background:var(--panel);border-right:1px solid var(--line);padding:0 12px 12px}
+    nav::before{color:var(--fg);font-size:18px;font-weight:800;padding:18px 8px 6px;border-bottom:0;margin-bottom:0}
+    nav::before{order:-2}
+    nav::after{content:'Bán hàng · Kho · Order Taobao';display:block;order:-1;font-size:12px;color:var(--muted);padding:0 8px 14px;font-weight:400}
+    nav button{color:var(--fg);border-left:0;border-radius:9px;padding:9px 10px;margin-bottom:2px;font-weight:500}
+    nav button:hover{background:var(--soft);color:var(--fg)}
+    nav button.on{background:var(--accent);color:var(--accent-fg);font-weight:600;border-left:0}
+    main{padding:22px 26px 60px}
+  }
+  @media (max-width:899px){
+    nav button{flex:none;border-bottom:0;border-radius:9px;margin:6px 2px;padding:7px 10px}
+    nav button.on{background:var(--accent);color:var(--accent-fg)}
+  }
+  /* lưới sản phẩm */
+  .prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+  .pc{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+  .pc .img{aspect-ratio:1/1;background:var(--soft);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:36px}
+  .pc .img img{width:100%;height:100%;object-fit:cover;display:block}
+  .pc .b{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px;flex:1}
+  .pc .code{font-size:12px;color:var(--muted)}
+  .pc .name{font-weight:600;line-height:1.3}
+  .pc .price{font-weight:700;color:var(--accent);font-size:17px}
+  .pc .meta{font-size:12.5px;color:var(--muted)}
+  .pc .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:6px}
+  .pc .acts button{padding:4px 10px;font-size:13px}
+  .chips{display:flex;flex-wrap:wrap;gap:4px}
+  .chip{font-size:12px;padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line)}
+  /* chọn sản phẩm bằng ảnh khi tạo đơn */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:10px;max-height:420px;overflow:auto;padding:2px}
+  .tiles button{padding:0;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);cursor:pointer;overflow:hidden;text-align:left;font-weight:normal}
+  .tiles button:hover{border-color:var(--accent)}
+  .tiles .im{aspect-ratio:1/1;background:var(--soft);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:28px}
+  .tiles img{width:100%;height:100%;object-fit:cover;display:block}
+  .tiles .t{padding:6px 8px;font-size:13px;line-height:1.3}
+  .tiles .t b{display:block;color:var(--accent)}
+  /* hộp xem chi tiết */
+  .vmodal{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;padding:4vh 16px;z-index:16;overflow:auto}
+  .vbox{width:min(760px,100%);padding:20px}
+  .vbox h2{font-size:19px;margin:0 0 12px}
+  .vimg{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .vimg .pv{width:200px;height:200px;border-radius:12px;background:var(--soft);overflow:hidden;flex:none;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--muted)}
+  .vimg .pv img{width:100%;height:100%;object-fit:cover}
+  .vimg .pv.gal{position:relative;padding:0}
+  .galNav{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:20px;line-height:1;cursor:pointer}
+  .galPrev{left:6px}.galNext{right:6px}
+  .galCount{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:2px 9px;border-radius:10px}
+  .galDel{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:15px;line-height:1;cursor:pointer}
+  .galThumbs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;max-width:200px}
+  .galThumbs img{width:44px;height:44px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent}
+  .galThumbs img.on{border-color:var(--accent)}
+  .calc{background:var(--bg);border-radius:12px;padding:10px 14px;font-size:14px;margin-top:10px}
+  .mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .ordtbl td{font-size:14px}
+  .ordtbl .stSel{padding:4px 6px;font-size:13px;width:auto}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .toolbar .grow{flex:1;min-width:180px}
+  .wbadge{margin-left:auto;background:var(--accent);color:var(--accent-fg);border-radius:99px;font-size:11px;padding:0 7px;line-height:18px}
+  nav button.on .wbadge{background:var(--accent-fg);color:var(--accent)}
+  .wo{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .wo .top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+  .wo .who{font-size:14px;margin:6px 0}
+  .wo .who a{color:var(--info)}
+  .wo table{margin-top:6px}
+  /* ---- Tạo đơn kiểu POS: sản phẩm trái, giỏ hàng phải ---- */
+  body.wide main{max-width:none}
+  .ordtbl .its{display:flex;flex-direction:column;gap:6px;min-width:240px}
+  .ordtbl .it{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--fg)}
+  .ordtbl .it .thumb{width:44px;height:44px}
+  .pos2{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:18px;align-items:start}
+  .posL #posQ{width:100%;margin-bottom:12px}
+  .pos2 .tiles{max-height:none;overflow:visible;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .cart{position:sticky;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .cart h2{margin:0 0 6px}
+  .cart label{margin-top:10px}
+  .cart .item{display:block;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:8px 0;margin:0;background:none;box-shadow:none}
+  .cart .ln{display:grid;grid-template-columns:auto minmax(0,1fr) 62px 92px auto;gap:8px;align-items:center}
+  .cart .ln .sum{font-size:14px;line-height:1.3}
+  .cart .ln .amt{text-align:right;font-size:14px;white-space:nowrap}
+  .cart .ln .qty{padding:6px 8px;text-align:center}
+  .cart .ed{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-top:6px}
+  .cart .item.filled .ed{display:none}
+  .cart .item .meta{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .cart .item .meta:empty{display:none}
+  #items:empty::before{content:"Giỏ hàng trống – bấm vào sản phẩm bên trái để thêm.";display:block;color:var(--muted);font-size:13px;padding:10px 0}
+  .cart .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .cart .linkbtn{background:none;border:0;color:var(--info);padding:6px 0;cursor:pointer;font-size:13px}
+  .sumr{margin-top:14px;border-top:1px solid var(--line);padding-top:8px}
+  .sumr div{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}
+  .sumr .big2{font-size:16px}
+  .sumr .big2 b{font-size:21px;color:var(--accent)}
+  #submit.full{width:100%;margin-top:12px;padding:13px;font-size:15px}
+  @media (max-width:1000px){.pos2{grid-template-columns:1fr}.cart{position:static}}
+</style>
+</head>
+<body>
+<div id="pinGate"><form id="pinForm">
+  <h2>🔒 Nhập mã PIN</h2>
+  <div style="font-size:13px;color:var(--muted)" id="pinHint">Hỏi chủ shop để lấy mã PIN.</div>
+  <input id="pinInput" type="password" inputmode="numeric" autocomplete="off">
+  <div id="pinMsg"></div>
+  <button type="submit" class="btn-teal" style="margin-top:8px">Vào</button>
+</form></div>
+<div id="vModal" class="vmodal"><div class="vbox" id="vBox"></div></div>
+<div id="modal"><form id="mForm">
+  <h2 id="mTitle"></h2>
+  <div id="mBody" class="grid"></div>
+  <div class="actions"><button type="button" class="btn-ghost" id="mCancel">Hủy</button>
+    <button type="submit" class="btn-teal" id="mSave">Lưu</button></div>
+</form></div>
+<header><h1>Tổng quan</h1><span><button type="button" id="pinOut" title="Xóa mã PIN đã nhớ trên máy này">Thoát</button>
+  <span class="code" id="orderCode">…</span></span></header>
+<nav><button type="button" class="on qlOnly" id="navDash" data-t="Tổng quan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 4v3h6V4z"/></svg><span>Tổng quan</span></button><button type="button" id="navNew" data-t="Tạo đơn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.5 11h11L21 7H6.2"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></svg><span>Tạo đơn</span></button><button type="button" id="navStock" data-t="Mã sản phẩm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 4 6l2 4 2-1v12h8V9l2 1 2-4-5-3q-3 2-6 0z"/></svg><span>Mã sản phẩm</span></button><button type="button" id="navCust" data-t="Mã khách hàng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg><span>Mã khách hàng</span></button><button type="button" id="navList" data-t="Đơn hàng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10v18l-3-2-2 2-2-2-3 2zM9.5 8h5M9.5 12h5"/></svg><span>Đơn hàng</span></button><button type="button" id="navKho" data-t="Kho"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4zM3 12l9 4 9-4M3 17l9 4 9-4"/></svg><span>Kho</span></button><button type="button" id="navWeb" data-t="Đơn online"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span>Đơn online</span><span class="wbadge" id="webBadge" style="display:none"></span></button><button type="button" class="qlOnly" id="navReport" data-t="Báo cáo ngày"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10v18H7zM10 8h4M10 12h4M10 16h2"/></svg><span>Báo cáo ngày</span></button><button type="button" class="qlOnly" id="navRate" data-t="Tỷ giá"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l5 7 5-7M12 11v9M8 13h8M8 16.5h8"/></svg><span>Tỷ giá</span></button></nav>
+<main id="app" class="loading">
+  <div id="msg" class="msg"></div>
+  <input type="file" id="imgFile" accept="image/*" style="display:none">
+
+  <div id="stockView" style="display:none">
+    <section>
+      <div class="head2"><h2>Sản phẩm &amp; tồn kho</h2>
+        <span class="rowbtns"><button type="button" class="btn-ghost qlOnly" id="pImp">⬆ Nhập Excel</button>
+        <button type="button" class="btn-teal qlOnly" id="pAdd">＋ Thêm sản phẩm</button></span></div>
+      <div class="grid">
+        <div style="grid-column:span 2"><label>Tìm theo mã / tên sản phẩm</label><input id="sQ" placeholder="vd: SP03 hoặc legging"></div>
+        <div><label>Lọc</label><select id="sFilter">
+          <option value="">Tất cả</option><option value="pos">Còn hàng</option>
+          <option value="neg">Âm kho – cần đặt Taobao</option><option value="zero">Hết hàng / chưa nhập</option></select></div>
+        <div style="align-self:end"><button type="button" class="btn-ghost" id="sReload" style="width:100%">↻ Làm mới số liệu</button></div>
+      </div>
+    </section>
+    <div id="stockList"></div>
+  </div>
+
+  <div id="custView" style="display:none">
+    <section>
+      <div class="head2"><h2>Khách hàng</h2>
+        <span class="rowbtns"><button type="button" class="btn-ghost qlOnly" id="cImp">⬆ Nhập Excel</button>
+        <button type="button" class="btn-teal" id="cAdd">＋ Thêm khách</button></span></div>
+      <div class="grid">
+        <div style="grid-column:span 2"><label>Tìm theo tên / SĐT / mã</label>
+          <input id="cQ" list="custList" placeholder="Gõ để tìm khách…"></div>
+        <div style="align-self:end"><button type="button" class="btn-ghost" id="cGo" style="width:100%">Xem chi tiết</button></div>
+      </div>
+    </section>
+    <div id="custDetail"></div>
+    <div id="custRows"></div>
+  </div>
+
+  <div id="dashView"><div id="dashBox"><p style="color:var(--muted)">Đang tải tổng quan…</p></div></div>
+
+  <div id="rateView" style="display:none">
+    <section>
+      <h2>Tỷ giá tệ → VNĐ</h2>
+      <div class="kpis"><div class="kpi">Tỷ giá mới nhất<b id="tgNow">…</b><span id="tgNowDate"></span></div></div>
+      <div class="grid" style="margin-top:12px">
+        <div><label>Ngày</label><input type="date" id="tgDay"></div>
+        <div><label>Tỷ giá (VNĐ / 1 tệ)</label><input id="tgRate" inputmode="numeric" placeholder="vd: 3650"></div>
+        <div><label>Ghi chú</label><input id="tgNote" placeholder="vd: giá chuyển khoản"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="tgSave" style="width:100%">✔ Lưu tỷ giá</button></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Ngày đã có tỷ giá thì lưu sẽ <b>sửa</b> dòng của ngày đó.
+        Phiếu nhập để trống tỷ giá sẽ lấy tỷ giá gần nhất <b>trước hoặc bằng ngày về hàng</b>, nên sửa / xóa tỷ giá cũ sẽ làm đổi giá vốn các lô nhập trong khoảng ngày đó.
+        Giá vốn ước tính ở danh mục luôn dùng tỷ giá mới nhất.</div>
+    </section>
+    <div id="tgList"></div>
+  </div>
+
+  <div id="khoView" style="display:none">
+    <section>
+      <div class="head2"><h2>Tồn kho theo màu / size</h2><span class="rowbtns"><span id="tonSum" style="font-size:13px;color:var(--muted);align-self:center"></span>
+        <button type="button" class="btn-ghost" id="tCsv">⬇ Xuất CSV</button></span></div>
+      <div class="grid">
+        <div style="grid-column:span 2"><label>Tìm mã / tên / màu / size</label><input id="tQ" placeholder="vd: SP03, đen, XL"></div>
+        <div><label>Lọc</label><select id="tF"><option value="">Tất cả</option><option value="pos">Còn hàng</option>
+          <option value="neg">Âm kho – cần đặt Taobao</option><option value="zero">Hết hàng</option></select></div>
+        <div style="align-self:end"><button type="button" class="btn-ghost" id="tReload" style="width:100%">↻ Làm mới số liệu</button></div>
+      </div>
+    </section>
+    <div id="tonBox" style="margin-bottom:14px"></div>
+    <section class="qlOnly">
+      <h2>Nhập hàng vào kho</h2>
+      <div class="grid">
+        <div><label>Ngày về</label><input type="date" id="kDate"></div>
+        <div style="grid-column:span 2"><label>Ghi chú phiếu nhập</label><input id="kNote" placeholder="vd: Lô Taobao 14/10"></div>
+      </div>
+      <div id="kItems"></div>
+      <div class="actions" style="justify-content:space-between;margin-top:10px">
+        <button type="button" class="btn-ghost" id="kAddRow">+ Thêm dòng</button>
+        <button type="button" class="btn-teal" id="kSave">✔ Lưu phiếu nhập</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Giá tệ / tỷ giá / ship để trống = lấy theo MA_SP và TY_GIA như trong sheet.</div>
+    </section>
+    <section class="qlOnly">
+      <h2>Báo cáo xuất – nhập – tồn</h2>
+      <div class="grid">
+        <div><label>Từ ngày</label><input type="date" id="xFrom"></div>
+        <div><label>Đến ngày</label><input type="date" id="xTo"></div>
+        <div><label>Lọc mã / tên / màu</label><input id="xQ" placeholder="vd: SP03"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="xGo" style="width:100%">Xem báo cáo</button></div>
+      </div>
+      <div class="quick">
+        <button type="button" class="btn-ghost xq" data-r="m">Tháng này</button>
+        <button type="button" class="btn-ghost xq" data-r="pm">Tháng trước</button>
+        <button type="button" class="btn-ghost xq" data-r="y">Năm nay</button>
+      </div>
+    </section>
+    <div id="xntBox" class="qlOnly"></div>
+  </div>
+
+  <div id="webView" style="display:none">
+    <section>
+      <div class="head2"><h2>Đơn khách đặt online (trang bán hàng)</h2>
+        <span class="rowbtns"><button type="button" class="btn-ghost" id="wReload">↻ Làm mới</button></span></div>
+      <div class="toolbar" style="margin-top:0"><select id="wF" style="width:auto"><option value="Chờ duyệt">Chờ duyệt</option>
+        <option value="">Tất cả</option><option value="Đã duyệt">Đã duyệt</option><option value="Từ chối">Từ chối</option></select>
+        <span style="font-size:13px;color:var(--muted)">Gọi xác nhận với khách rồi bấm <b>Duyệt</b> → tạo đơn thật ở DON_HANG (trừ kho, tính công nợ). Khách mới tự được tạo mã KH theo SĐT.</span></div>
+    </section>
+    <div id="webList"></div>
+  </div>
+
+  <div id="reportView" style="display:none">
+    <section>
+      <h2>Báo cáo bán hàng theo khoảng ngày</h2>
+      <div class="grid">
+        <div><label>Từ ngày</label><input type="date" id="bcFrom"></div>
+        <div><label>Đến ngày</label><input type="date" id="bcTo"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="bcGo" style="width:100%">Xem báo cáo</button></div>
+      </div>
+      <div class="quick">
+        <button type="button" class="btn-ghost bcq" data-r="0">Hôm nay</button>
+        <button type="button" class="btn-ghost bcq" data-r="1">Hôm qua</button>
+        <button type="button" class="btn-ghost bcq" data-r="7">7 ngày</button>
+        <button type="button" class="btn-ghost bcq" data-r="m">Tháng này</button>
+        <button type="button" class="btn-ghost bcq" data-r="pm">Tháng trước</button>
+      </div>
+    </section>
+    <div id="bcBox"></div>
+  </div>
+
+  <div id="listView" style="display:none">
+    <section>
+      <h2>Đơn hàng</h2>
+      <div class="grid">
+        <div><label>Từ ngày</label><input type="date" id="lFrom"></div>
+        <div><label>Đến ngày</label><input type="date" id="lTo"></div>
+        <div style="align-self:end"><button type="button" class="btn-teal" id="lGo" style="width:100%">Xem</button></div>
+      </div>
+      <div class="quick">
+        <button type="button" class="btn-ghost" data-r="0">Hôm nay</button>
+        <button type="button" class="btn-ghost" data-r="1">Hôm qua</button>
+        <button type="button" class="btn-ghost" data-r="7">7 ngày</button>
+        <button type="button" class="btn-ghost" data-r="m">Tháng này</button>
+        <button type="button" class="btn-ghost" data-r="open">Tất cả đơn chưa giao</button>
+      </div>
+      <div class="toolbar"><input class="grow" id="lQ" placeholder="Tìm mã đơn, khách, sản phẩm…">
+        <label class="chk" style="margin:0"><input type="checkbox" id="lShowDone"> Hiện cả đơn <b>đã giao</b></label>
+        <button type="button" class="btn-ghost" id="lCsv">⬇ Xuất CSV</button>
+        <button type="button" class="btn-teal" id="lNew">＋ Tạo đơn</button></div>
+    </section>
+    <div class="totals" style="margin-bottom:14px">
+      <div class="tot">Số đơn (hợp lệ)<b id="sCount">0</b></div>
+      <div class="tot qlOnly">Tổng tiền<b id="sTotal">0</b></div>
+      <div class="tot qlOnly">Đã thu<b id="sPaid">0</b></div>
+      <div class="tot qlOnly">Còn nợ<b id="sDebt">0</b></div>
+    </div>
+    <div id="orderList"></div>
+  </div>
+
+  <div id="form" style="display:none">
+    <div class="pos2">
+      <div class="posL">
+        <input id="posQ" placeholder="Tìm sản phẩm (mã / tên)…">
+        <div class="tiles" id="posTiles"></div>
+        <datalist id="prodList"></datalist>
+        <datalist id="prodListPos"></datalist>
+        <datalist id="colorList"></datalist>
+        <datalist id="sizeList"></datalist>
+      </div>
+      <aside class="cart">
+        <h2>Giỏ hàng</h2>
+        <div id="items"></div>
+        <button type="button" class="linkbtn" id="addItem">+ Gõ tay sản phẩm</button>
+        <div class="g2">
+          <div><label>Tên khách *</label><input id="custSearch" list="custList" placeholder="Gõ tên / SĐT / mã khách…" autocomplete="off"></div>
+          <div><label>Số điện thoại</label><input id="ncPhone" inputmode="tel"></div>
+        </div>
+        <datalist id="custList"></datalist>
+        <label>Địa chỉ giao</label><input id="ncAddr">
+        <div><label>Mã KH (khách mới — tự đặt, để trống = tự tạo)</label><input id="ncCode" placeholder="vd: ngocmaihn" autocomplete="off"></div>
+        <div class="cust-info" id="custInfo"></div>
+        <div class="g2">
+          <div><label>Nhóm khách (khách mới)</label>
+            <select id="ncGroup"><option>Khách lẻ</option><option>Khách sỉ</option><option>Cộng tác viên</option></select></div>
+          <div><label>Ngày</label><input type="date" id="date"></div>
+        </div>
+        <div class="g2">
+          <div><label>Giảm giá (đ)</label><input id="oDisc" inputmode="numeric" value="0"></div>
+          <div><label>Khách đã trả/cọc (đ)</label><input id="paid" inputmode="numeric" value="0"></div>
+        </div>
+        <label>Ghi chú</label><textarea id="note" rows="2" placeholder="Hẹn giao giờ hành chính…"></textarea>
+        <div class="sumr">
+          <div><span>Tiền hàng</span><b id="tSub">0 đ</b></div>
+          <div><span>Giảm giá</span><b id="tDisc">– 0 đ</b></div>
+          <div class="big2"><span>Tổng cộng</span><b id="tTotal">0 đ</b></div>
+          <div><span>Đã trả/cọc</span><b id="tPaid">0 đ</b></div>
+          <div><span>Còn phải thu</span><b id="tRemain">0 đ</b></div>
+        </div>
+        <button type="button" class="btn-teal full" id="submit">Tạo đơn</button>
+        <button type="button" class="linkbtn" id="reprint">Xuất lại PDF đơn cũ…</button>
+      </aside>
+    </div>
+  </div>
+
+  <section id="result">
+    <h2>Đã tạo đơn</h2>
+    <div class="big" id="rCode"></div>
+    <div id="rInfo" style="margin:6px 0 14px;color:var(--muted)"></div>
+    <div class="actions" style="justify-content:flex-start">
+      <button type="button" class="btn" id="rPdf">📄 Tạo PDF đơn hàng</button>
+      <a id="rOpen" target="_blank"><button type="button" class="btn">Mở PDF</button></a>
+      <button type="button" class="btn-ghost" id="rDownload">Tải PDF về máy</button>
+      <button type="button" class="btn-teal" id="rCopy">Copy tin nhắn gửi khách</button>
+      <a id="rZalo" target="_blank"><button type="button" class="btn-ghost">Mở Zalo của khách</button></a>
+      <button type="button" class="btn-ghost" id="rNew">+ Tạo đơn mới</button>
+    </div>
+    <textarea id="rText" style="margin-top:12px"></textarea>
+  </section>
+</main>
+
+<script>
+let D = null, mode = 'old', lastResult = null;
+const $ = id => document.getElementById(id);
+const money = n => (Math.round(+n || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const num = s => +String(s).replace(/[^\d-]/g, '') || 0;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// Chạy trong Apps Script → dùng google.script.run. Chạy ở GitHub Pages → gọi API (doPost) của web app.
+const API_URL = 'https://script.google.com/macros/s/AKfycbwCYciJNmhKL-8ppfcZ8STvZZVGOrk4OryDcraUJ4ov0oOV3VsZDD97alXlEZ4zxgbuHw/exec';
+function run() {
+  if (window.google && google.script && google.script.run) return google.script.run;
+  let ok = () => {}, fail = () => {};
+  const r = new Proxy({}, { get: (t, fn) =>
+    fn === 'withSuccessHandler' ? (f => { ok = f; return r; }) :
+    fn === 'withFailureHandler' ? (f => { fail = f; return r; }) :
+    (...args) => fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ fn, args }) })
+      .then(res => res.json())
+      .then(j => j.ok ? ok(j.data) : fail(new Error(j.error)))
+      .catch(e => fail(new Error('Không kết nối được máy chủ (' + e.message + ')'))) });
+  return r;
+}
+
+// mã PIN cho người dùng không phải chủ shop – nhớ trên máy này
+// giao diện nhân viên: link …/exec?nv=1 hoặc nhanvien.html (quyền thật do mã PIN quyết định ở server)
+const STAFF = /*STAFF*/false || /[?&]nv=1\b/.test(location.search);
+const LS = STAFF ? 'nv_' : '';
+if (STAFF) { document.body.classList.add('staff'); $('pinHint').textContent = 'Nhập mã PIN nhân viên (hỏi chủ shop).'; }
+let PIN = '';
+try { PIN = localStorage.getItem(LS + 'pin') || ''; } catch (e) { /* trình duyệt chặn lưu */ }
+function askPin(text) {
+  $('pinMsg').textContent = text || '';
+  $('pinGate').style.display = 'flex'; $('pinInput').value = ''; $('pinInput').focus();
+}
+$('pinForm').onsubmit = ev => {
+  ev.preventDefault();
+  PIN = $('pinInput').value.trim();
+  try { localStorage.setItem(LS + 'pin', PIN); } catch (e) { /* bỏ qua */ }
+  $('pinGate').style.display = 'none'; clearMsg(); load();
+  // tải lại mục đang xem bằng PIN mới
+  if ($('dashView').style.display !== 'none') loadDash();
+  if ($('listView').style.display !== 'none' && $('lFrom').value) loadOrders();
+};
+$('pinOut').onclick = () => { try { localStorage.removeItem(LS + 'pin'); localStorage.removeItem(LS + 'initData'); } catch (e) {} PIN = ''; askPin('Đã thoát. Nhập mã PIN để dùng lại.'); };
+
+function showMsg(text, ok) {
+  const i = String(text).indexOf('PIN:');
+  // lời gọi cũ (gửi lúc chưa có PIN) trả về sau khi đã nhập PIN → bỏ qua
+  if (!ok && i >= 0 && PIN && /Nhập mã PIN để dùng/.test(text)) { $('app').classList.remove('loading'); return; }
+  if (!ok && i >= 0) { $('app').classList.remove('loading'); try { localStorage.removeItem(LS + 'initData'); } catch (e) {} return askPin(String(text).slice(i + 4).trim()); }
+  const m = $('msg'); m.textContent = text; m.className = 'msg ' + (ok ? 'ok' : 'err'); window.scrollTo(0, 0);
+}
+function clearMsg() { $('msg').className = 'msg'; }
+
+function load() {
+  if (!D) {
+    try { const c = JSON.parse(localStorage.getItem(LS + 'initData') || 'null'); if (c) applyInit(c); } catch (e) { /* bỏ qua */ }
+  }
+  if (!D) $('app').classList.add('loading');
+  run().withSuccessHandler(d => {
+    try { localStorage.setItem(LS + 'initData', JSON.stringify(d)); } catch (e) { /* bỏ qua */ }
+    applyInit(d); loadWeb(true);
+  }).withFailureHandler(e => { showMsg('Lỗi tải dữ liệu: ' + e.message); $('app').classList.remove('loading'); })
+    .getInitData(PIN);
+}
+
+function applyInit(d) {
+    D = d;
+    $('orderCode').textContent = d.nextOrder;
+    $('date').value = d.today;
+    $('custList').innerHTML = d.customers.map(c =>
+      `<option value="${esc(c.code)} — ${esc(c.name)}${c.phone ? ' — ' + esc(c.phone) : ''}">`).join('');
+    $('prodList').innerHTML = d.products.map(p =>
+      `<option value="${esc(p.code)} — ${esc(p.name)}">${money(p.price)}đ • tồn ${p.stock}</option>`).join('');
+    // [VÁ YC3] Gợi ý riêng của màn Tạo đơn: ẩn SP hết hàng (tồn = 0). SP âm kho (đang chờ hàng Taobao) vẫn hiện để bán ORDER.
+    // prodList (dùng ở màn Nhập hàng) giữ ĐẦY ĐỦ — SP tồn 0 vẫn phải nhập hàng lại được.
+    $('prodListPos').innerHTML = d.products.filter(p => Number(p.stock) !== 0).map(p =>
+      `<option value="${esc(p.code)} — ${esc(p.name)}">${money(p.price)}đ • tồn ${p.stock}</option>`).join('');
+    $('colorList').innerHTML = d.colors.map(c => `<option value="${esc(c)}">`).join('');
+    $('sizeList').innerHTML = d.sizes.map(c => `<option value="${esc(c)}">`).join('');
+    $('app').classList.remove('loading');
+    if ($('stockView').style.display !== 'none') renderStock();
+    if ($('form').style.display !== 'none') renderPos();
+    if (typeof LAST_ORDERS !== 'undefined' && LAST_ORDERS && $('listView').style.display !== 'none') renderOrders();
+}
+
+function customer() {
+  // [VÁ YC1] Ưu tiên mã khách đã CHỌN từ gợi ý (dataset.code). Chỉ khi chưa chọn mới suy từ nội dung ô:
+  // ô đang chứa đúng mã/tên/SĐT hoàn chỉnh của một khách thì coi là khách đó (giữ tương thích cũ).
+  const dc = $('custSearch').dataset.code;
+  if (dc) { const byCode = D.customers.find(c => c.code === dc); if (byCode) return byCode; }
+  const v = $('custSearch').value.split(' — ')[0].trim();
+  // CHÌA KHÓA CỦA LỖI: bản cũ không chặn v rỗng — v='' vẫn khớp c.phone='' của khách đầu tiên không có SĐT
+  // (đúng khách ngomaingocquynhzl trong video) nên mỗi lần xóa trắng ô là handler điền lại tên đầy đủ.
+  if (!v) return null;
+  return D.customers.find(c => c.code === v || c.name === v || c.phone === v);
+}
+
+// khách: gõ tên/SĐT/mã → trùng khách cũ thì dùng khách cũ, không thì tạo khách mới
+const custByPhone = ph => { ph = String(ph).replace(/\D/g, ''); return ph.length >= 9 ? D.customers.find(c => String(c.phone).replace(/\D/g, '') === ph) : null; };
+function showCust() {
+  // [VÁ YC1] Chỉ tra khách theo SĐT khi ô Tên khách đang TRỐNG. Trước đây: đã chọn khách cũ (SĐT tự điền)
+  // rồi sửa tên thành khách mới, showCust()/Tạo đơn vẫn lẳng lặng gắn đơn cho khách CŨ theo SĐT.
+  const c = customer() || ($('custSearch').value.trim() ? null : custByPhone($('ncPhone').value));
+  $('custInfo').innerHTML = c ? `Khách cũ <b>${esc(c.code)}</b> · ${esc(c.name)} · ${esc(c.group)}`
+    + (num(c.debt) > 0 ? ` · <span class="stock-low">Đang nợ ${esc(c.debt)}đ</span>` : '')
+    : ($('custSearch').value.trim() ? ($('ncCode').value.trim() ? 'Khách mới – sẽ tạo với Mã KH: <b>' + esc($('ncCode').value.trim()) + '</b>' : 'Khách mới – sẽ tự tạo mã KH khi tạo đơn.') : '');
+  return c;
+}
+// [VÁ YC1] Gốc lỗi "xóa tên không được": handler cũ chạy trên MỌI sự kiện 'input' và hễ customer() khớp
+// là GHI ĐÈ custSearch.value = c.name + ghi đè SĐT/địa chỉ. Sau khi chọn gợi ý, ô chứa đúng tên khách
+// (tự nó đã khớp c.name) nên ô bị "khóa cứng" vào tên đó; trên iOS Safari, bộ chọn datalist áp lại giá trị
+// gợi ý ("mã — tên — SĐT") là handler lại snap về tên đầy đủ. Bản vá: CHỈ nhận diện + tự điền khi giá trị
+// ô là một lựa chọn gợi ý nguyên vẹn (chứa ' — ' và phần đầu là mã khách) — tức đúng khoảnh khắc chọn.
+// Gõ/xóa/sửa tay: tuyệt đối không ghi lại ô, chỉ gỡ dataset.code khi nội dung đã khác tên khách đã chọn.
+$('custSearch').addEventListener('input', () => {
+  const raw = $('custSearch').value;
+  const head = raw.split(' — ')[0].trim();
+  const picked = raw.includes(' — ') ? D.customers.find(c => c.code === head) : null;
+  if (picked) {
+    $('custSearch').value = picked.name; $('ncPhone').value = picked.phone || ''; $('ncAddr').value = picked.address || '';
+    $('custSearch').dataset.code = picked.code;
+  } else if ($('custSearch').dataset.code) {
+    const locked = D.customers.find(c => c.code === $('custSearch').dataset.code);
+    if (!locked || raw !== locked.name) delete $('custSearch').dataset.code;
+  }
+  showCust();
+});
+$('ncCode').addEventListener('input', () => { showCust(); });
+$('ncPhone').addEventListener('input', () => {
+  const c = custByPhone($('ncPhone').value);
+  // [VÁ YC1] Chỉ tự điền tên khi ô Tên khách đang TRỐNG — không bao giờ ghi đè tên người dùng đã gõ/sửa.
+  if (c && !$('custSearch').value.trim()) { $('custSearch').value = c.name; $('custSearch').dataset.code = c.code; if (!$('ncAddr').value) $('ncAddr').value = c.address || ''; }
+  showCust();
+});
+
+function addItem(pre) {
+  const div = document.createElement('div');
+  div.className = 'item' + (pre ? ' filled' : '');
+  div.innerHTML = `<div class="ln"><span class="pic"></span><span class="sum">Sản phẩm gõ tay</span>
+      <input class="qty" inputmode="numeric" value="${pre ? pre.qty : 1}" title="Số lượng"><span class="amt"></span>
+      <button type="button" class="btn-x" title="Xóa">✕</button></div>
+    <div class="ed"><input class="code" list="prodListPos" placeholder="Mã / tên sản phẩm"><input class="color" list="colorList" placeholder="Màu"><input class="size" list="sizeList" placeholder="Size"></div>
+    <div class="meta"></div>`;
+  if (pre) { div.querySelector('.code').value = pre.code; div.querySelector('.color').value = pre.color; div.querySelector('.size').value = pre.size; }
+  div.querySelector('.btn-x').onclick = () => { div.remove(); recalc(); };
+  div.querySelectorAll('input').forEach(i => i.addEventListener('input', () => { fillVariants(div); recalc(); }));
+  $('items').appendChild(div);
+  fillVariants(div); recalc();
+  if (!pre) div.querySelector('.code').focus();
+  return div;
+}
+$('addItem').onclick = () => addItem();
+
+function renderPos() {
+  if (!D) return;
+  const q = norm($('posQ').value.trim());
+  // [VÁ YC3] Ẩn SP hết hàng (tồn = 0) khỏi lưới Tạo đơn. SP tồn ÂM (đã bán chờ hàng Taobao) vẫn hiện:
+  // đó là hàng ORDER — ẩn cả âm kho sẽ mất 30+/36 SP đang bán (số liệu rà 20/10/2026, xem BAO_CAO.md).
+  const ps = D.products.filter(p => Number(p.stock) !== 0 && (!q || norm(p.code + ' ' + p.name).includes(q)));
+  $('posTiles').innerHTML = ps.map(p => `<button type="button" data-code="${esc(p.code)}"><div class="im">${firstImg(p) ? `<img src="${esc(firstImg(p))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '▢'}</div>
+    <div class="t">${esc(p.code)} · ${esc(p.name)}<b>${money(p.price)} đ</b><span style="font-size:12px;color:${p.stock <= 0 ? 'var(--bad)' : 'var(--muted)'}">Tồn ${p.stock}</span></div></button>`).join('')
+    || '<p style="color:var(--muted)">Không có sản phẩm phù hợp.</p>';
+  document.querySelectorAll('#posTiles button').forEach(b => b.onclick = () => pickVariant(b.dataset.code));
+}
+$('posQ').addEventListener('input', renderPos);
+function pickVariant(code) {
+  const p = findProd(code); if (!p) return;
+  const vars = D.stock.filter(x => x.code === p.code);
+  const uniq = a => [...new Set(a.filter(Boolean))];
+  const colors = uniq(vars.map(x => x.color).concat(D.colors)), sizes = uniq(vars.map(x => x.size).concat(D.sizes));
+  const gp2 = galParts(p, 'pv', false);
+  openV(`<h2>${esc(p.code)} · ${esc(p.name)}</h2>
+    <div class="vimg"><div style="flex:none"><div class="pv gal" style="width:150px;height:150px">${gp2.main}</div>${gp2.thumbs}</div>
+      <div style="flex:1;min-width:220px"><div class="grid">
+        <div><label>Màu</label><input id="pvColor" list="pvColors" value="${esc(vars[0] ? vars[0].color : '')}"><datalist id="pvColors">${colors.map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
+        <div><label>Size</label><input id="pvSize" list="pvSizes" value="${esc(vars[0] ? vars[0].size : '')}"><datalist id="pvSizes">${sizes.map(z => `<option value="${esc(z)}">`).join('')}</datalist></div>
+        <div><label>Số lượng</label><input id="pvQty" inputmode="numeric" value="1"></div></div>
+        <div class="calc" id="pvTon"></div></div></div>
+    <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Hủy</button><button type="button" class="btn-teal" id="pvAdd">Thêm vào giỏ</button></div>`);
+  galWire('pv', gp2.imgs);
+  const ton = () => {
+    const c = $('pvColor').value.trim().toLowerCase(), z = $('pvSize').value.trim().toLowerCase();
+    const x = vars.find(v => v.color.toLowerCase() === c && v.size.toLowerCase() === z);
+    const have = x ? x.qty : 0, qty = num($('pvQty').value);
+    $('pvTon').innerHTML = `Giá bán <b>${money(p.price)} đ</b> · Tồn màu/size này: <b>${have}</b>`
+      + (have < qty ? ' · <span style="color:var(--warn)">không đủ hàng → đơn sẽ là ORDER (chờ hàng)</span>' : '');
+  };
+  ['pvColor', 'pvSize', 'pvQty'].forEach(i => $(i).addEventListener('input', ton)); ton();
+  $('pvAdd').onclick = () => {
+    const color = $('pvColor').value.trim(), size = $('pvSize').value.trim(), qty = Math.max(1, num($('pvQty').value) || 1);
+    const same = [...document.querySelectorAll('#items .item')].find(d => prodCode(d.querySelector('.code').value) === p.code
+      && d.querySelector('.color').value.trim().toLowerCase() === color.toLowerCase() && d.querySelector('.size').value.trim().toLowerCase() === size.toLowerCase());
+    if (same) { same.querySelector('.qty').value = num(same.querySelector('.qty').value) + qty; fillVariants(same); recalc(); }
+    else addItem({ code: p.code, color, size, qty });
+    closeV();
+  };
+}
+
+// ô sản phẩm chứa "SP01 — Tên", hoặc chỉ mã, hoặc đúng tên → trả về mã
+const prodCode = v => {
+  v = String(v).split(' — ')[0].trim();
+  const p = D && D.products.find(x => x.code.toLowerCase() === v.toLowerCase() || x.name.toLowerCase() === v.toLowerCase());
+  return p ? p.code : v;
+};
+const findProd = code => D.products.find(x => x.code.toLowerCase() === String(code).toLowerCase());
+const thumb = (url, cls) => url
+  ? `<img class="thumb ${cls || ''}" src="${esc(url)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+  : `<div class="thumb noimg ${cls || ''}">▢</div>`;
+const imgList = p => String((p && p.img) || '').split('\n').map(s => s.trim()).filter(Boolean);
+const firstImg = p => imgList(p)[0] || '';
+// Gallery dùng chung: galParts(p, idp, withDel) -> {main, thumbs, imgs}; galWire(idp, imgs, onDel) gắn sự kiện
+function galParts(p, idp, withDel) {
+  const imgs = imgList(p);
+  const main = imgs.length
+    ? `<img id="${idp}Main" src="${esc(imgs[0])}" alt="" referrerpolicy="no-referrer">`
+      + (imgs.length > 1 ? `<button type="button" class="galNav galPrev" id="${idp}Prev">‹</button><button type="button" class="galNav galNext" id="${idp}Next">›</button><span class="galCount" id="${idp}Count">1 / ${imgs.length}</span>` : '')
+      + (withDel ? `<button type="button" class="galDel qlOnly" id="${idp}Del" title="Xóa ảnh này">×</button>` : '')
+    : '▢';
+  const thumbs = imgs.length > 1
+    ? `<div class="galThumbs" id="${idp}Thumbs">${imgs.map((u, i) => `<img src="${esc(u)}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join('')}</div>`
+    : '';
+  return { main, thumbs, imgs };
+}
+function galWire(idp, imgs, onDel) {
+  let i = 0;
+  const upd = () => {
+    const gm = $(idp + 'Main'); if (gm && imgs[i]) gm.src = imgs[i];
+    const gc = $(idp + 'Count'); if (gc) gc.textContent = (i + 1) + ' / ' + imgs.length;
+    document.querySelectorAll('#' + idp + 'Thumbs img').forEach(t => t.classList.toggle('on', +t.dataset.i === i));
+  };
+  if ($(idp + 'Prev')) $(idp + 'Prev').onclick = () => { i = (i - 1 + imgs.length) % imgs.length; upd(); };
+  if ($(idp + 'Next')) $(idp + 'Next').onclick = () => { i = (i + 1) % imgs.length; upd(); };
+  document.querySelectorAll('#' + idp + 'Thumbs img').forEach(t => t.onclick = () => { i = +t.dataset.i; upd(); });
+  if (onDel && $(idp + 'Del')) $(idp + 'Del').onclick = () => onDel(imgs[i]);
+}
+
+function fillVariants(div) {
+  const code = prodCode(div.querySelector('.code').value);
+  const p = findProd(code);
+  const meta = div.querySelector('.meta'), sum = div.querySelector('.sum');
+  const color = div.querySelector('.color').value.trim(), size = div.querySelector('.size').value.trim();
+  const qty = num(div.querySelector('.qty').value);
+  div.querySelector('.pic').innerHTML = p ? thumb(firstImg(p), 'sm') : '';
+  if (!p) {
+    sum.textContent = 'Sản phẩm gõ tay'; div.querySelector('.amt').textContent = '';
+    meta.textContent = code ? '⚠ Mã hàng chưa có trong MA_SP' : ''; return;
+  }
+  sum.innerHTML = `<b>${esc(p.code)}</b>${color ? ' · ' + esc(color) : ''}${size ? ' · ' + esc(size) : ''}<br><span style="font-size:12px;color:var(--muted)">${esc(p.name)}</span>`;
+  div.querySelector('.amt').textContent = money(p.price * qty) + ' đ';
+  const here = D.stock.find(s => s.code.toLowerCase() === code.toLowerCase() && s.color.toLowerCase() === color.toLowerCase() && s.size.toLowerCase() === size.toLowerCase());
+  const have = here ? here.qty : 0;
+  meta.innerHTML = (color || size) ? (have >= qty ? `<span class="stock-ok">Tồn ${have} → hàng có sẵn</span>`
+    : `<span class="stock-low">Tồn ${have} → đơn ORDER (chờ hàng)</span>`) : '';
+}
+
+function readItems() {
+  return [...document.querySelectorAll('.item')].map(d => {
+    const code = prodCode(d.querySelector('.code').value);
+    const p = code ? findProd(code) : null;
+    return {
+      code, color: d.querySelector('.color').value.trim(),
+      size: d.querySelector('.size').value.trim(), qty: num(d.querySelector('.qty').value),
+      discount: 0,
+      // [VÁ YC2 - phía client] Chụp ĐƠN GIÁ tại thời điểm tạo đơn, gửi kèm payload.
+      // Máy chủ hiện tại bỏ qua trường lạ này nên gửi kèm là AN TOÀN; khi máy chủ được vá để ghi
+      // giá này thành GIÁ TRỊ TĨNH vào DON_HANG cột K (thay công thức tra MA_SP!J), đơn sẽ khóa giá.
+      // Chi tiết phần máy chủ/Sheet: xem agent-review/BAO_CAO.md mục 2 — client một mình KHÔNG khóa được giá.
+      price: p ? p.price : 0,
+    };
+  }).filter(i => i.code);
+}
+
+function recalc() {
+  if (!D) return;
+  const sub = readItems().reduce((s, i) => {
+    const p = D.products.find(x => x.code.toLowerCase() === i.code.toLowerCase());
+    return s + (p ? p.price * i.qty : 0);
+  }, 0);
+  const disc = num($('oDisc').value), total = sub - disc, paid = num($('paid').value);
+  $('tSub').textContent = money(sub) + ' đ'; $('tDisc').textContent = '– ' + money(disc) + ' đ';
+  $('tTotal').textContent = money(total) + ' đ'; $('tPaid').textContent = money(paid) + ' đ'; $('tRemain').textContent = money(total - paid) + ' đ';
+}
+$('paid').addEventListener('input', recalc);
+$('oDisc').addEventListener('input', recalc);
+
+$('submit').onclick = () => {
+  clearMsg();
+  const items = readItems();
+  if (!items.length) return showMsg('Chưa có sản phẩm nào.');
+  const bad = items.find(i => !D.products.some(p => p.code.toLowerCase() === i.code.toLowerCase()));
+  if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong MA_SP.');
+  if (items.some(i => i.qty <= 0)) return showMsg('Số lượng phải lớn hơn 0.');
+  items[0].discount = num($('oDisc').value);   // giảm giá cả đơn ghi vào dòng đầu
+  const payload = { date: $('date').value, items, paid: num($('paid').value), note: $('note').value };
+  const c = showCust();
+  if (c) payload.customerCode = c.code;
+  else {
+    const name = $('custSearch').value.trim();
+    if (!name) return showMsg('Nhập tên khách.');
+    const ncCode = $('ncCode').value.trim();
+    if (ncCode && /\s/.test(ncCode)) return showMsg('Mã KH không được chứa khoảng trắng.');
+    if (ncCode && D.customers.some(x => x.code.toLowerCase() === ncCode.toLowerCase())) return showMsg('Mã KH "' + ncCode + '" đã có — chọn khách cũ hoặc đặt mã khác.');
+    payload.newCustomer = { newCode: ncCode, name, phone: $('ncPhone').value.trim(), address: $('ncAddr').value.trim(), facebook: '', group: $('ncGroup').value };
+  }
+  $('app').classList.add('loading'); $('submit').textContent = 'Đang tạo đơn…';
+  run().withSuccessHandler(showResult)
+    .withFailureHandler(e => { showMsg('Không tạo được đơn: ' + e.message); done(); })
+    .createOrder(payload, PIN);
+};
+function done() { $('app').classList.remove('loading'); $('submit').innerHTML = 'Tạo đơn'; }
+
+$('reprint').onclick = () => {
+  const code = prompt('Nhập mã đơn cần xuất lại PDF (vd: DH001):');
+  if (!code) return;
+  $('app').classList.add('loading');
+  run().withSuccessHandler(showResult)
+    .withFailureHandler(e => { showMsg(e.message); done(); }).exportOrderPdf(code, PIN);
+};
+
+function showResult(r) {
+  done(); lastResult = r;
+  const o = r.order;
+  $('form').style.display = 'none'; $('result').style.display = 'block';
+  $('rCode').textContent = `${r.orderCode} — ${o.customer.name}`;
+  $('rInfo').innerHTML = `Tổng ${money(o.total)}đ • Đã trả ${money(o.paid)}đ • <b>Còn lại ${money(o.remain)}đ</b>`
+    + ` • ${o.lines.length} dòng hàng (đã ghi vào DON_HANG)`;
+  const hasPdf = !!r.pdfUrl;
+  $('rPdf').style.display = hasPdf ? 'none' : '';
+  $('rOpen').style.display = $('rDownload').style.display = hasPdf ? '' : 'none';
+  if (hasPdf) $('rOpen').href = r.pdfUrl;
+  const phone = String(o.customer.phone || '').replace(/\D/g, '');
+  $('rZalo').href = phone ? 'https://zalo.me/' + phone : 'https://chat.zalo.me/';
+  $('rText').value = `Chào ${o.customer.name}, shop gửi bạn đơn hàng ${r.orderCode} (${o.date}):\n`
+    + o.lines.map(l => `- ${l.name} ${l.color} ${l.size} x${l.qty}: ${money(l.amount)}đ`).join('\n')
+    + `\nTổng: ${money(o.total)}đ | Đã trả: ${money(o.paid)}đ | Còn lại: ${money(o.remain)}đ`
+    + (hasPdf ? `\nXem đơn (PDF): ${r.pdfUrl}` : '');
+  showMsg(hasPdf ? 'PDF đơn ' + r.orderCode + ' đã lưu vào Google Drive.' : 'Đã tạo đơn ' + r.orderCode + ' (đã ghi vào DON_HANG).', true);
+}
+$('rPdf').onclick = () => {
+  $('app').classList.add('loading'); $('rPdf').textContent = 'Đang tạo PDF…';
+  run().withSuccessHandler(r => { $('rPdf').textContent = '📄 Tạo PDF đơn hàng'; showResult(r); })
+    .withFailureHandler(e => { $('rPdf').textContent = '📄 Tạo PDF đơn hàng'; showMsg('Không tạo được PDF: ' + e.message); done(); })
+    .exportOrderPdf(lastResult.orderCode, PIN, $('note').value);
+};
+
+$('rDownload').onclick = () => {
+  const bytes = Uint8Array.from(atob(lastResult.pdfBase64), c => c.charCodeAt(0));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+  a.download = lastResult.pdfName; document.body.appendChild(a); a.click(); a.remove();
+};
+$('rCopy').onclick = () => {
+  const t = $('rText'); t.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(
+    () => showMsg('Đã copy tin nhắn – dán vào Zalo/Messenger để gửi khách.', true),
+    () => { document.execCommand('copy'); showMsg('Đã copy tin nhắn.', true); });
+};
+$('rNew').onclick = () => {
+  $('items').innerHTML = ''; $('note').value = ''; $('paid').value = 0; $('oDisc').value = 0; $('custSearch').value = ''; $('custInfo').innerHTML = '';
+  ['ncPhone','ncAddr','ncCode'].forEach(i => $(i).value = '');
+  $('result').style.display = 'none'; $('form').style.display = ''; clearMsg(); recalc(); load();
+};
+
+/* ---------------- xem đơn theo ngày ---------------- */
+const ymd = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const VIEWS = { dash: ['dashView', 'navDash'], rate: ['rateView', 'navRate'], new: ['form', 'navNew'], list: ['listView', 'navList'], stock: ['stockView', 'navStock'], cust: ['custView', 'navCust'],
+  kho: ['khoView', 'navKho'], report: ['reportView', 'navReport'], web: ['webView', 'navWeb'] };
+function showView(v) {
+  Object.entries(VIEWS).forEach(([k, [box, nav]]) => {
+    $(box).style.display = k === v ? '' : 'none';
+    $(nav).classList.toggle('on', k === v);
+  });
+  $('result').style.display = 'none';
+  clearMsg();
+  document.querySelector('header h1').textContent = $(VIEWS[v][1]).dataset.t;
+  if (v === 'list' && !$('lFrom').value) { setRange('open'); }
+  if (v === 'stock') renderStock();
+  if (v === 'new') renderPos();
+  document.body.classList.toggle('wide', v === 'new' || v === 'list');
+  if (v === 'cust') renderCusts();
+  if (v === 'kho') { if (!STAFF) initKho(); renderTon(); }
+  if (v === 'report') initReport();
+  if (v === 'web') loadWeb();
+  if (v === 'dash') loadDash();
+  if (v === 'rate') loadRates();
+}
+$('navNew').onclick = () => showView('new');
+$('navList').onclick = () => showView('list');
+$('navStock').onclick = () => showView('stock');
+$('navCust').onclick = () => showView('cust');
+$('navKho').onclick = () => showView('kho');
+$('navDash').onclick = () => showView('dash');
+$('navRate').onclick = () => showView('rate');
+$('navReport').onclick = () => showView('report');
+$('navWeb').onclick = () => showView('web');
+
+/* ---------------- đơn online (từ trang bán hàng cho khách) ---------------- */
+let WEB = null;
+function setWebBadge(n) { $('webBadge').textContent = n; $('webBadge').style.display = n ? '' : 'none'; }
+function loadWeb(silent) {
+  if (!silent) $('app').classList.add('loading');
+  run().withSuccessHandler(r => { $('app').classList.remove('loading'); WEB = r; setWebBadge(r.pending); if (!silent || $('webView').style.display !== 'none') renderWeb(); })
+    .withFailureHandler(e => { $('app').classList.remove('loading'); if (!silent) showMsg('Lỗi tải đơn online: ' + e.message); })
+    .listWebOrders(PIN);
+}
+$('wReload').onclick = () => loadWeb();
+$('wF').onchange = () => WEB && renderWeb();
+function renderWeb() {
+  const f = $('wF').value;
+  const list = WEB.orders.filter(o => !f || o.status === f);
+  const tagc = { 'Chờ duyệt': 't-warn', 'Đã duyệt': 't-ok', 'Từ chối': 't-mute' };
+  $('webList').innerHTML = list.length ? list.map(o => `<div class="wo">
+      <div class="top"><span><b>${esc(o.code)}</b> · ${esc(o.time)}</span><span class="tag ${tagc[o.status] || 't-info'}">${esc(o.status)}${o.dh ? ' → ' + esc(o.dh) : ''}</span></div>
+      <div class="who"><b>${esc(o.name)}</b> · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · <a href="https://zalo.me/${esc(o.phone)}" target="_blank">Zalo</a><br>
+        <span style="color:var(--muted)">${esc(o.address)}</span>${o.note ? `<br>Ghi chú: ${esc(o.note)}` : ''}${o.shopNote ? `<br><i>Shop: ${esc(o.shopNote)}</i>` : ''}</div>
+      <div class="tblwrap"><table class="xnt"><thead><tr><th>Mã</th><th>Sản phẩm</th><th>Màu</th><th>Size</th><th class="n">SL</th><th class="n">Đơn giá</th><th class="n">Thành tiền</th></tr></thead>
+        <tbody>${o.items.map(i => `<tr><td>${esc(i.code)}</td><td>${esc(i.name)}</td><td>${esc(i.color)}</td><td>${esc(i.size)}</td><td class="n">${i.qty}</td>
+          <td class="n">${money(i.price)}</td><td class="n">${money(i.amount)}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td colspan="6">Tổng tiền hàng</td><td class="n">${money(o.total)}</td></tr></tfoot></table></div>
+      ${o.status === 'Chờ duyệt' ? `<div class="mfoot"><button type="button" class="btn-red wRej" data-code="${esc(o.code)}">Từ chối</button>
+        <button type="button" class="btn-teal wOk" data-code="${esc(o.code)}">✔ Duyệt → tạo đơn</button></div>` : ''}
+    </div>`).join('') : '<p style="color:var(--muted)">Không có đơn ' + (f ? f.toLowerCase() : '') + '.</p>';
+  document.querySelectorAll('.wOk').forEach(b => b.onclick = () => {
+    if (confirm('Duyệt đơn ' + b.dataset.code + '?\nĐơn sẽ được tạo ở DON_HANG (trừ kho, tính công nợ khách).'))
+      act('approveWebOrder', [b.dataset.code], r => 'Đã duyệt ' + r.code + ' → tạo đơn ' + r.orderCode + ' (khách ' + r.customer + ').', () => loadWeb());
+  });
+  document.querySelectorAll('.wRej').forEach(b => b.onclick = () => {
+    const why = prompt('Lý do từ chối đơn ' + b.dataset.code + ' (ghi chú cho shop):', 'Khách không xác nhận');
+    if (why !== null) act('rejectWebOrder', [b.dataset.code, why], 'Đã từ chối đơn ' + b.dataset.code + '.', () => loadWeb());
+  });
+}
+
+/* ---------------- hộp nhập liệu dùng chung (thêm / sửa) ---------------- */
+let mSubmit = null;
+function openForm(title, fields, values, onSave) {
+  $('mTitle').textContent = title;
+  $('mBody').innerHTML = fields.map(f => `<div class="${f.full ? 'full' : ''}"><label>${esc(f.label)}</label>${
+    f.opts ? `<select name="${f.k}">${f.opts.map(o => `<option${o === values[f.k] ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+           : `<input name="${f.k}" value="${esc(values[f.k] ?? '')}"${f.num ? ' inputmode="numeric"' : ''}${f.ro ? ' readonly style="background:var(--bg)"' : ''}${f.ph ? ` placeholder="${esc(f.ph)}"` : ''}>`
+  }</div>`).join('');
+  mSubmit = onSave;
+  $('mSave').textContent = 'Lưu'; $('mSave').disabled = false;
+  $('modal').style.display = 'flex';
+  const first = $('mBody').querySelector('input:not([readonly]),select'); if (first) first.focus();
+}
+function closeForm() { $('modal').style.display = 'none'; mSubmit = null; prodImgFile = null; }
+$('mCancel').onclick = closeForm;
+$('mForm').onsubmit = ev => {
+  ev.preventDefault();
+  const o = {}; $('mBody').querySelectorAll('[name]').forEach(i => { o[i.name] = i.value.trim(); });
+  if (mSubmit) mSubmit(o);
+};
+// gọi server có khóa màn hình + báo lỗi; xong thì tải lại dữ liệu
+function act(fnName, args, okText, after) {
+  $('app').classList.add('loading'); $('mSave').disabled = true;
+  run().withSuccessHandler(r => {
+    $('mSave').disabled = false; $('app').classList.remove('loading');
+    closeForm(); showMsg(typeof okText === 'function' ? okText(r) : okText, true); load(); if (after) after(r);
+  }).withFailureHandler(e => {
+    $('mSave').disabled = false; $('app').classList.remove('loading');
+    if ($('modal').style.display === 'flex' && !/PIN:/.test(e.message)) alert(e.message); else { closeForm(); showMsg(e.message); }
+  })
+    [fnName](...args, PIN);
+}
+
+/* ---------------- tồn kho theo sản phẩm ---------------- */
+const qcls = q => q < 0 ? 'neg' : q === 0 ? 'zero' : 'pos';
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+
+function renderStock() {
+  if (!D) return;
+  const q = norm($('sQ').value.trim()), f = $('sFilter').value;
+  const list = D.products.filter(p => {
+    if (q && !norm(p.code + ' ' + p.name).includes(q)) return false;
+    if (f === 'pos') return p.stock > 0;
+    if (f === 'neg') return D.stock.some(s => s.code === p.code && s.qty < 0);
+    if (f === 'zero') return p.stock === 0;
+    return true;
+  });
+  $('stockList').innerHTML = list.length ? '<div class="prods">' + list.map(p => {
+    const vars = D.stock.filter(x => x.code === p.code);
+    const colors = [...new Set(vars.map(x => x.color).filter(Boolean))], sizes = [...new Set(vars.map(x => x.size).filter(Boolean))];
+    const tag = stockTag(p.stock);
+    return `<div class="pc"><div class="img pView" data-code="${esc(p.code)}">${firstImg(p) ? `<img src="${esc(firstImg(p))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '▢'}</div>
+      <div class="b"><span class="code">${esc(p.code)}</span><span class="name">${esc(p.name)}</span>
+        <span class="price">${money(p.price)} đ</span>
+        <div class="chips">${colors.map(c => `<span class="chip">${esc(c)}</span>`).join('')}${sizes.map(z => `<span class="chip">${esc(z)}</span>`).join('')}</div>
+        <span class="meta">Tồn <b style="color:${p.stock < 0 ? 'var(--bad)' : 'var(--fg)'}">${p.stock}</b> sp · <span class="tag ${tag[0]}">${tag[1]}</span></span>
+        <div class="acts"><button type="button" class="btn-ghost pView" data-code="${esc(p.code)}">Chi tiết</button>
+          <button type="button" class="btn-ghost imgbtn qlOnly" data-code="${esc(p.code)}">${firstImg(p) ? '+ Thêm ảnh' : '+ Ảnh'}</button>
+          <button type="button" class="btn-ghost pEdit qlOnly" data-code="${esc(p.code)}">Sửa</button>
+          <button type="button" class="btn-red pDel qlOnly" data-code="${esc(p.code)}">Xóa</button></div></div></div>`;
+  }).join('') + '</div>' : '<p style="color:var(--muted)">Không tìm thấy sản phẩm.</p>';
+  document.querySelectorAll('.pView').forEach(b => b.onclick = () => viewProduct(b.dataset.code));
+  document.querySelectorAll('.imgbtn').forEach(b => b.onclick = () => { imgFor = b.dataset.code; $('imgFile').value = ''; $('imgFile').click(); });
+  document.querySelectorAll('.pEdit').forEach(b => b.onclick = () => productForm(findProd(b.dataset.code)));
+  document.querySelectorAll('.pDel').forEach(b => b.onclick = () => {
+    if (confirm('Xóa sản phẩm ' + b.dataset.code + ' khỏi danh mục?\n(Chỉ xóa được khi chưa có đơn bán / phiếu nhập nào dùng mã này.)'))
+      act('deleteProduct', [b.dataset.code], 'Đã xóa sản phẩm ' + b.dataset.code + '.');
+  });
+}
+/* ---------------- hộp xem chi tiết, nhãn tồn kho, CSV ---------------- */
+function openV(html) { $('vBox').innerHTML = html; $('vModal').style.display = 'flex'; }
+function closeV() { $('vModal').style.display = 'none'; }
+$('vModal').addEventListener('click', e => { if (e.target.id === 'vModal') closeV(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeV(); });
+function stockTag(q) {
+  if (q < 0) return ['t-bad', 'Thiếu ' + -q + ', cần order'];
+  if (q === 0) return ['t-bad', 'Hết hàng'];
+  if (q <= 2) return ['t-warn', 'Sắp hết'];
+  return ['t-ok', 'Còn hàng'];
+}
+function dlCsv(name, head, rows) {
+  const cell = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const text = '\ufeff' + [head].concat(rows).map(r => r.map(cell).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+function viewProduct(code) {
+  const p = findProd(code); if (!p) return;
+  const vars = D.stock.filter(x => x.code === p.code);
+  const colors = [...new Set(vars.map(x => x.color))], sizes = [...new Set(vars.map(x => x.size))];
+  const cellOf = (c, z) => vars.find(x => x.color === c && x.size === z);
+  const ql = !STAFF && p.priceCny !== '' && p.priceCny !== undefined;
+  const gp = galParts(p, 'gal', true);
+  openV(`<h2>${esc(p.code)} · ${esc(p.name)}</h2>
+    <div class="vimg"><div style="flex:none"><div class="pv gal">${gp.main}</div>${gp.thumbs}</div>
+      <div style="flex:1;min-width:220px">
+        <div class="calc">Giá bán <b>${money(p.price)} đ</b> · Tồn <b>${p.stock}</b> sp
+          ${ql ? `<br><span class="qlOnly">Giá nhập ${esc(p.priceCny)} ¥ · Ship + phí DV ${money(p.ship)} đ</span>` : ''}</div>
+        ${p.warn && p.warn !== '✔' ? `<p style="margin:8px 0 0" class="${p.warn[0] === '⚠' ? 'neg' : 'zero'}">${esc(p.warn)}</p>` : ''}
+        ${p.link ? `<p style="font-size:13px;margin:8px 0 0"><a href="${esc(p.link)}" target="_blank" rel="noopener">Mở link Taobao ↗</a></p>` : ''}
+      </div></div>
+    <h3 style="margin:16px 0 8px;font-size:15px">Tồn kho theo màu × size</h3>
+    ${vars.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th>Màu \\ Size</th>${sizes.map(z => `<th class="n">${esc(z) || '—'}</th>`).join('')}</tr></thead>
+      <tbody>${colors.map(c => `<tr><td>${esc(c) || '—'}</td>${sizes.map(z => { const x = cellOf(c, z);
+        return x ? `<td class="n" title="Đã nhập ${x.inQty} · đã bán ${x.outQty}" style="color:${x.qty <= 0 ? 'var(--bad)' : 'inherit'}"><b>${x.qty}</b></td>` : '<td class="n" style="color:var(--muted)">·</td>'; }).join('')}</tr>`).join('')}</tbody></table></div>
+      <p style="font-size:12px;color:var(--muted)">Rê chuột vào ô để xem đã nhập / đã bán.</p>` : '<p style="color:var(--muted)">Chưa có nhập / bán theo màu-size.</p>'}
+    <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Đóng</button>
+      <button type="button" class="btn-teal" id="vToOrder">＋ Tạo đơn với sản phẩm này</button></div>`);
+  $('vToOrder').onclick = () => { closeV(); showView('new'); pickVariant(p.code); };
+  galWire('gal', gp.imgs, url => {
+    if (!confirm('Xóa ảnh này khỏi sản phẩm ' + p.code + '?')) return;
+    run().withSuccessHandler(r => { const q = findProd(r.code); if (q) q.img = r.img; viewProduct(code); showMsg('Đã xóa ảnh.', true); })
+      .withFailureHandler(e => showMsg('Không xóa được ảnh: ' + e.message))
+      .deleteProductImage(code, url, PIN);
+  });
+}
+const PROD_FIELDS = isNew => [
+  { k: 'code', label: 'Mã hàng *', ro: !isNew, ph: 'vd: SP08' }, { k: 'name', label: 'Tên sản phẩm *' },
+  { k: 'price', label: 'Giá bán (VNĐ)', num: 1 }, { k: 'priceCny', label: 'Giá nhập (tệ)', num: 1 },
+  { k: 'ship', label: 'Ship + phí DV /sp (VNĐ)', num: 1 }, { k: 'link', label: 'Link Taobao', full: 1 },
+];
+let prodImgFile = null; // file ảnh chọn lúc tạo SP mới
+function prodImgRow() {
+  return `<div class="full"><label>Ảnh sản phẩm</label>
+    <div style="display:flex;gap:10px;align-items:center">
+      <img id="prodImgPrev" alt="" style="display:none;width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">
+      <button type="button" class="btn-ghost" id="prodImgPick">Chọn ảnh…</button>
+      <span id="prodImgName" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <input type="file" id="prodImgFile" accept="image/*" style="display:none"></div>`;
+}
+function wireProdImg() {
+  prodImgFile = null;
+  $('prodImgPick').onclick = () => $('prodImgFile').click();
+  $('prodImgFile').onchange = () => {
+    const f = $('prodImgFile').files[0]; prodImgFile = f || null;
+    if (f) { $('prodImgPrev').src = URL.createObjectURL(f); $('prodImgPrev').style.display = 'block'; $('prodImgName').textContent = f.name; }
+    else { $('prodImgPrev').style.display = 'none'; $('prodImgName').textContent = ''; }
+  };
+}
+// tạo SP mới kèm ảnh: lưu SP trước, rồi thu nhỏ + gửi ảnh lên Drive (dùng lại saveProductImage)
+function saveProductWithImage(o, file) {
+  $('app').classList.add('loading'); $('mSave').disabled = true;
+  run().withSuccessHandler(r => {
+    shrink(file, 800, data => run().withSuccessHandler(r2 => {
+      const p = D ? findProd(r2.code) : null; if (p) p.img = r2.img;
+      $('mSave').disabled = false; $('app').classList.remove('loading');
+      closeForm(); showMsg('Đã lưu sản phẩm ' + r2.code + ' kèm ảnh (ảnh ' + imgList(p).length + '). ✔', true); load();
+    }).withFailureHandler(e => {
+      $('mSave').disabled = false; $('app').classList.remove('loading');
+      closeForm(); showMsg('Đã lưu sản phẩm ' + r.code + ' nhưng không lưu được ảnh: ' + e.message + ' (bấm "+ Ảnh" để thêm sau).'); load();
+    }).saveProductImage(r.code, data, PIN));
+  }).withFailureHandler(e => {
+    $('mSave').disabled = false; $('app').classList.remove('loading');
+    if ($('modal').style.display === 'flex' && !/PIN:/.test(e.message)) alert(e.message); else { closeForm(); showMsg(e.message); }
+  }).saveProduct(o, PIN);
+}
+function productForm(p) {
+  const isNew = !p;
+  openForm(isNew ? 'Thêm sản phẩm' : 'Sửa sản phẩm ' + p.code, PROD_FIELDS(isNew), p || {}, o => {
+    if (!o.code || !o.name) return alert('Cần nhập mã hàng và tên sản phẩm.');
+    o.isNew = isNew; ['price', 'priceCny', 'ship'].forEach(k => { o[k] = o[k] === '' ? '' : num(o[k]); });
+    if (isNew && prodImgFile) { saveProductWithImage(o, prodImgFile); return; }
+    act('saveProduct', [o], r => 'Đã lưu sản phẩm ' + r.code + (isNew ? '. Bấm "+ Ảnh" để thêm ảnh sau.' : '.'));
+  });
+  if (isNew) { $('mBody').insertAdjacentHTML('beforeend', prodImgRow()); wireProdImg(); }
+}
+$('pAdd').onclick = () => productForm(null);
+$('sQ').addEventListener('input', renderStock);
+$('sFilter').onchange = renderStock;
+$('sReload').onclick = () => { load(); };
+
+// thêm / đổi ảnh: thu nhỏ còn 800px rồi gửi lên Drive + MA_SP
+let imgFor = '';
+function shrink(file, max, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const k = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(img, 0, 0, c.width, c.height);
+    cb(c.toDataURL('image/jpeg', 0.85));
+  };
+  img.src = URL.createObjectURL(file);
+}
+$('imgFile').onchange = () => {
+  const f = $('imgFile').files[0]; if (!f || !imgFor) return;
+  $('app').classList.add('loading');
+  shrink(f, 800, data => run().withSuccessHandler(r => {
+    const p = findProd(r.code); if (p) p.img = r.img;
+    $('app').classList.remove('loading'); renderStock(); showMsg('Đã thêm ảnh cho ' + r.code + ' (ảnh ' + imgList(p).length + ').', true);
+  }).withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Không lưu được ảnh: ' + e.message); })
+    .saveProductImage(imgFor, data, PIN));
+};
+
+/* ---------------- chi tiết khách hàng ---------------- */
+function custFrom(v) {
+  v = String(v).split(' — ')[0].trim().toLowerCase();
+  return D.customers.find(c => c.code.toLowerCase() === v || c.name.toLowerCase() === v || c.phone === v);
+}
+$('cQ').addEventListener('change', () => { if (custFrom($('cQ').value)) loadCustomer(); });
+$('cQ').addEventListener('input', () => { $('custDetail').innerHTML = ''; renderCusts(); });
+function renderCusts() {
+  if (!D) return;
+  const q = norm($('cQ').value.split(' — ')[0].trim());
+  const list = D.customers.filter(c => !q || norm(c.code + ' ' + c.name + ' ' + c.phone).includes(q));
+  $('custRows').innerHTML = list.length ? list.map(c => `
+    <div class="crow"><div class="who"><b>${esc(c.code)}</b> — ${esc(c.name)}<br>
+      <span>${esc(c.phone) || 'chưa có SĐT'} • ${esc(c.group)} • mua ${esc(c.total || '0')}đ${num(c.debt) > 0 ? ` • <b class="debt">nợ ${esc(c.debt)}đ</b>` : ''}</span></div>
+      <div class="rowbtns"><button type="button" class="btn-ghost cView" data-code="${esc(c.code)}">Xem</button>
+        <button type="button" class="btn-ghost cEdit" data-code="${esc(c.code)}">Sửa</button>
+        <button type="button" class="btn-red cDel qlOnly" data-code="${esc(c.code)}">Xóa</button></div></div>`).join('')
+    : '<p style="color:var(--muted)">Không tìm thấy khách.</p>';
+  const byCode = code => D.customers.find(c => c.code === code);
+  document.querySelectorAll('.cView').forEach(b => b.onclick = () => { $('cQ').value = b.dataset.code; loadCustomer(); });
+  document.querySelectorAll('.cEdit').forEach(b => b.onclick = () => customerForm(byCode(b.dataset.code)));
+  document.querySelectorAll('.cDel').forEach(b => b.onclick = () => {
+    if (confirm('Xóa khách ' + b.dataset.code + '?\n(Chỉ xóa được khi khách chưa có đơn hàng nào.)'))
+      act('deleteCustomer', [b.dataset.code], 'Đã xóa khách ' + b.dataset.code + '.', renderCusts);
+  });
+}
+const GROUPS = ['Khách lẻ', 'Khách sỉ', 'Cộng tác viên'];
+function customerForm(c) {
+  const isNew = !c;
+  openForm(isNew ? 'Thêm khách hàng' : 'Sửa khách ' + c.code, [
+    { k: 'code', label: isNew ? 'Mã KH (tự đặt — để trống = tự tạo)' : 'Mã KH (không sửa được)', ph: 'vd: ngocmaihn', ro: isNew ? 0 : 1 },
+    { k: 'name', label: 'Tên khách *' }, { k: 'phone', label: 'SĐT / Zalo', num: 1 },
+    { k: 'group', label: 'Nhóm khách', opts: GROUPS }, { k: 'address', label: 'Địa chỉ' },
+    { k: 'facebook', label: 'Link Facebook', full: 1 },
+  ], c || { group: 'Khách lẻ' }, o => {
+    if (!o.name) return alert('Nhập tên khách.');
+    if (!isNew) o.code = c.code;
+    else {
+      const typed = (o.code || '').trim();
+      delete o.code;
+      if (typed && /\s/.test(typed)) return alert('Mã KH không được chứa khoảng trắng.');
+      if (typed && D.customers.some(x => x.code.toLowerCase() === typed.toLowerCase())) return alert('Mã KH "' + typed + '" đã có, đặt mã khác.');
+      if (typed) o.newCode = typed;
+    }
+    act('saveCustomer', [o], r => 'Đã lưu khách ' + r.code + '.', renderCusts);
+  });
+}
+$('cAdd').onclick = () => customerForm(null);
+$('cGo').onclick = loadCustomer;
+function loadCustomer() {
+  clearMsg();
+  const c = custFrom($('cQ').value);
+  if (!c) return showMsg('Chọn khách trong danh sách gợi ý.');
+  $('app').classList.add('loading'); $('custDetail').innerHTML = ''; $('custRows').innerHTML = '';
+  run().withSuccessHandler(r => {
+    $('app').classList.remove('loading');
+    const k = r.customer, s = r.summary, phone = String(k.phone).replace(/\D/g, '');
+    const cls = { 'Chờ hàng': 'b-cho', 'Đang xử lý': 'b-xl', 'Đã giao': 'b-giao', 'Đã hủy': 'b-huy' };
+    $('custDetail').innerHTML = `
+      <section>
+        <h2>${esc(k.code)} — ${esc(k.name)}</h2>
+        <div class="cinfo">
+          <div><span>SĐT:</span> ${esc(k.phone) || '—'} ${phone ? `• <a href="https://zalo.me/${phone}" target="_blank">Zalo</a>` : ''}</div>
+          <div><span>Nhóm:</span> ${esc(k.group) || '—'}</div>
+          <div><span>Địa chỉ:</span> ${esc(k.address) || '—'}</div>
+          <div><span>Facebook:</span> ${k.facebook ? `<a href="${esc(k.facebook)}" target="_blank">Mở ↗</a>` : '—'}</div>
+        </div>
+        ${k.warn && k.warn !== '✔' ? `<div style="margin-top:8px;font-size:12px" class="${k.warn[0] === '⚠' ? 'neg' : ''}">${esc(k.warn)}</div>` : ''}
+      </section>
+      <div class="totals" style="margin-bottom:14px">
+        <div class="tot">Số đơn<b>${s.count}</b></div><div class="tot">Số SP đã mua<b>${s.qty}</b></div>
+        <div class="tot">Tổng mua<b>${money(s.total)}</b></div><div class="tot">Đã trả<b>${money(s.paid)}</b></div>
+        <div class="tot">Còn nợ<b class="${s.debt > 0 ? 'debt' : ''}">${money(s.debt)}</b></div>
+      </div>
+      ${r.orders.length ? r.orders.map(o => `
+        <div class="ord">
+          <div class="ord-top"><span><b>${esc(o.code)}</b> • ${esc(o.date)}</span><span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span></div>
+          ${o.lines.map(l => `<div class="line ${l.cancelled ? 'x' : ''}">${thumb(l.img, 'sm')}
+            <span style="flex:1">${esc(l.code)} — ${esc(l.name)} • ${esc(l.color)} ${esc(l.size)} • x${l.qty}</span>
+            <span>${money(l.amount)}đ</span></div>`).join('')}
+          <div class="money"><span>Tổng <b>${money(o.total)}</b></span><span>Đã thu ${money(o.paid)}</span>
+            ${o.debt > 0 ? `<span class="debt">Nợ ${money(o.debt)}</span>` : ''}
+            <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button></div>
+        </div>`).join('') : '<p style="color:var(--muted)">Khách chưa có đơn nào.</p>'}`;
+    bindPdf('#custDetail', 'custView');
+  }).withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Lỗi tải khách: ' + e.message); })
+    .getCustomerDetail(c.code, PIN);
+}
+
+function bindPdf(scope, view) {
+  document.querySelectorAll(scope + ' .pdfbtn').forEach(b => b.onclick = () => {
+    $('app').classList.add('loading');
+    run().withSuccessHandler(r => { $(view).style.display = 'none'; showResult(r); })
+      .withFailureHandler(e => { showMsg(e.message); $('app').classList.remove('loading'); })
+      .exportOrderPdf(b.dataset.code, PIN);
+  });
+}
+
+function setRange(r) {
+  const t = new Date(); let f = new Date(t), to = new Date(t);
+  if (r === '1') { f.setDate(t.getDate() - 1); to = new Date(f); }
+  else if (r === '7') f.setDate(t.getDate() - 6);
+  else if (r === 'm') f = new Date(t.getFullYear(), t.getMonth(), 1);
+  else if (r === 'open') { f = new Date(2020, 0, 1); $('lShowDone').checked = false; }
+  $('lFrom').value = ymd(f); $('lTo').value = ymd(to); loadOrders();
+}
+document.querySelectorAll('#listView .quick button').forEach(b => b.onclick = () => setRange(b.dataset.r));
+$('lGo').onclick = loadOrders;
+
+function loadOrders() {
+  if ($('lFrom').value > $('lTo').value) return showMsg('Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.');
+  $('app').classList.add('loading'); $('orderList').innerHTML = '';
+  run().withSuccessHandler(res => {
+    $('app').classList.remove('loading');
+    LAST_ORDERS = res; renderOrders();
+  }).withFailureHandler(e => { showMsg('Lỗi tải đơn: ' + e.message); $('app').classList.remove('loading'); })
+    .listOrders($('lFrom').value, $('lTo').value, PIN);
+}
+let LAST_ORDERS = null, LAST_SHOWN = [];
+$('lQ').addEventListener('input', () => LAST_ORDERS && renderOrders());
+$('lNew').onclick = () => showView('new');
+$('lCsv').onclick = () => dlCsv('DonHang_' + $('lFrom').value + '_' + $('lTo').value + '.csv',
+  ['Mã đơn', 'Ngày', 'Mã KH', 'Khách', 'Sản phẩm', 'SL', 'Tổng', 'Đã thu', 'Còn nợ', 'Trạng thái'],
+  LAST_SHOWN.map(o => [o.code, o.date, o.custCode, o.custName, o.items.join('; '), o.qty, o.total, o.paid, o.debt, o.status]));
+$('lShowDone').onchange = () => LAST_ORDERS && renderOrders();
+// dòng hàng dạng "Tên SP (hoặc mã) màu size xN" → ảnh + chữ
+function itemCell(t) {
+  let best = null;
+  if (D) D.products.forEach(p => {
+    const k = [p.name, p.code].find(k => k && t.toLowerCase().startsWith(k.toLowerCase() + ' '));
+    if (k && (!best || k.length > best.k.length)) best = { p, k };
+  });
+  return `<div class="it">${thumb(best ? firstImg(best.p) : '', 'sm')}<span>${best && best.k !== best.p.code ? `<b>${esc(best.p.code)}</b> ` : ''}${esc(t)}</span></div>`;
+}
+function renderOrders() {
+    const res = LAST_ORDERS, s = res.summary;
+    const showDone = $('lShowDone').checked;
+    const list = res.orders.filter(o => showDone || o.status !== 'Đã giao');
+    const hiddenDone = res.orders.length - list.length;
+    $('sCount').textContent = s.valid + (s.count > s.valid ? ` (+${s.count - s.valid} hủy)` : '');
+    if (!s.hidden) { $('sTotal').textContent = money(s.total); $('sPaid').textContent = money(s.paid); $('sDebt').textContent = money(s.debt); }
+    const cls = { 'Chờ hàng': 'b-cho', 'Đang xử lý': 'b-xl', 'Đã giao': 'b-giao', 'Đã hủy': 'b-huy' };
+    const q = norm($('lQ').value.trim());
+    const shown = list.filter(o => !q || norm([o.code, o.custCode, o.custName, o.items.join(' ')].join(' ')).includes(q));
+    LAST_SHOWN = shown;
+    const opts = o => o.status === 'Đã giao' || o.status === 'Đã hủy'
+      ? `<option selected disabled>${esc(o.status)}</option><option value="mo">↺ Mở lại</option>`
+      : `<option selected disabled>${esc(o.status)}</option><option value="giao">✔ Đã giao</option><option value="huy">✕ Hủy đơn</option>`;
+    $('orderList').innerHTML = (hiddenDone ? `<p style="font-size:12px;color:var(--muted)">Đang ẩn ${hiddenDone} đơn đã giao – tick "Hiện cả đơn đã giao" để xem.</p>` : '')
+      + (shown.length ? `<div class="tblwrap"><table class="xnt ordtbl"><thead><tr><th>Mã</th><th>Ngày</th><th>Khách</th><th>Sản phẩm</th>
+          <th class="n">SL</th><th class="n">Tổng</th><th class="n">Đã thu</th><th class="n">Còn nợ</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+        ${shown.map(o => `<tr><td><b>${esc(o.code)}</b></td><td>${esc(o.date)}</td><td>${esc(o.custName || o.custCode)}<br><span style="font-size:12px;color:var(--muted)">${esc(o.custCode)}</span></td>
+          <td><div class="its">${o.items.map(itemCell).join('')}</div></td><td class="n">${o.qty}</td>
+          <td class="n">${money(o.total)}</td><td class="n">${money(o.paid)}</td><td class="n" style="color:${o.debt > 0 ? 'var(--bad)' : 'inherit'}">${money(o.debt)}</td>
+          <td><span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span><br><select class="stSel" data-code="${esc(o.code)}" aria-label="Đổi trạng thái">${opts(o)}</select></td>
+          <td><button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}" style="padding:4px 10px;font-size:13px">PDF</button></td></tr>`).join('')}
+        </tbody></table></div>`
+        : '<p style="color:var(--muted)">Không có đơn nào' + (hiddenDone ? ' chưa giao' : '') + ' phù hợp.</p>');
+    bindPdf('#orderList', 'listView');
+    const ask = { giao: 'Đánh dấu đơn %s ĐÃ GIAO (ghi ngày giao hôm nay, dòng đơn sẽ tự ẩn trong Sheet)?',
+      huy: 'HỦY đơn %s? (hàng được cộng lại vào kho)', mo: 'Mở lại đơn %s (xóa ngày giao / hủy)?' };
+    document.querySelectorAll('#orderList .stSel').forEach(sel => sel.onchange = () => {
+      const a = sel.value; sel.selectedIndex = 0;
+      if (confirm(ask[a].replace('%s', sel.dataset.code)))
+        act('setOrderStatus', [sel.dataset.code, a], 'Đã cập nhật đơn ' + sel.dataset.code + '.', loadOrders);
+    });
+}
+
+/* ---------------- kho: nhập hàng + xuất – nhập – tồn ---------------- */
+function initKho() {
+  if (!$('kDate').value && D) $('kDate').value = D.today;
+  if (!$('kItems').children.length) addRecRow();
+  if (!$('xFrom').value) xRange('m');
+}
+function addRecRow() {
+  const div = document.createElement('div');
+  div.className = 'rec';
+  div.innerHTML = `
+    <div class="pcode"><label>Sản phẩm (mã / tên)</label><input class="code" list="prodList" placeholder="Gõ mã hoặc tên…"></div>
+    <div><label>Màu</label><input class="color" list="colorList"></div>
+    <div><label>Size</label><input class="size" list="sizeList"></div>
+    <div><label>SL</label><input class="qty" inputmode="numeric" value="1"></div>
+    <div><label>Giá tệ (tùy chọn)</label><input class="cny" inputmode="decimal"></div>
+    <div><button type="button" class="btn-x" title="Xóa dòng">✕</button></div>`;
+  div.querySelector('.btn-x').onclick = () => div.remove();
+  $('kItems').appendChild(div);
+}
+$('kAddRow').onclick = addRecRow;
+$('kSave').onclick = () => {
+  clearMsg();
+  const items = [...document.querySelectorAll('#kItems .rec')].map(d => ({
+    code: prodCode(d.querySelector('.code').value), color: d.querySelector('.color').value.trim(),
+    size: d.querySelector('.size').value.trim(), qty: num(d.querySelector('.qty').value),
+    priceCny: d.querySelector('.cny').value.trim() === '' ? '' : +d.querySelector('.cny').value.replace(',', '.') || 0,
+  })).filter(i => i.code);
+  if (!items.length) return showMsg('Phiếu nhập chưa có sản phẩm.');
+  const bad = items.find(i => !findProd(i.code));
+  if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong danh mục – thêm ở mục Sản phẩm trước.');
+  if (items.some(i => i.qty <= 0)) return showMsg('Số lượng nhập phải lớn hơn 0.');
+  const total = items.reduce((s, i) => s + i.qty, 0);
+  if (!confirm(`Lưu phiếu nhập ${items.length} dòng, tổng ${total} sản phẩm, ngày ${$('kDate').value}?`)) return;
+  act('addReceipt', [{ date: $('kDate').value, note: $('kNote').value.trim(), items }],
+    r => `Đã nhập kho ${r.rows} dòng (NHAP_HANG từ dòng ${r.start}).`,
+    () => { $('kItems').innerHTML = ''; $('kNote').value = ''; addRecRow(); });
+};
+
+function xRange(r) {
+  const t = new Date(); let f, to = new Date(t);
+  if (r === 'm') f = new Date(t.getFullYear(), t.getMonth(), 1);
+  else if (r === 'pm') { f = new Date(t.getFullYear(), t.getMonth() - 1, 1); to = new Date(t.getFullYear(), t.getMonth(), 0); }
+  else f = new Date(t.getFullYear(), 0, 1);
+  $('xFrom').value = ymd(f); $('xTo').value = ymd(to); loadXnt();
+}
+document.querySelectorAll('.xq').forEach(b => b.onclick = () => xRange(b.dataset.r));
+$('xGo').onclick = loadXnt;
+let XNT = null;
+function loadXnt() {
+  if ($('xFrom').value > $('xTo').value) return showMsg('Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.');
+  $('app').classList.add('loading');
+  run().withSuccessHandler(r => { $('app').classList.remove('loading'); XNT = r; renderXnt(); })
+    .withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Lỗi báo cáo: ' + e.message); })
+    .stockReport($('xFrom').value, $('xTo').value, PIN);
+}
+$('xQ').addEventListener('input', () => XNT && renderXnt());
+function renderXnt() {
+  const q = norm($('xQ').value.trim());
+  const rows = XNT.rows.filter(r => !q || norm([r.code, r.name, r.color, r.size].join(' ')).includes(q));
+  const sum = f => rows.reduce((s, r) => s + r[f], 0);
+  $('xntBox').innerHTML = rows.length ? `<div class="tblwrap"><table class="xnt">
+    <thead><tr><th>Mã</th><th>Tên sản phẩm</th><th>Màu</th><th>Size</th><th class="n">Tồn đầu</th><th class="n">Nhập</th>
+      <th class="n">Xuất (bán)</th><th class="n">Tồn cuối</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(r.color)}</td><td>${esc(r.size)}</td>
+      <td class="n">${r.open}</td><td class="n">${r.in || ''}</td><td class="n">${r.out || ''}</td>
+      <td class="n ${qcls(r.close)}">${r.close}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td colspan="4">Cộng (${rows.length} dòng)</td><td class="n">${sum('open')}</td><td class="n">${sum('in')}</td>
+      <td class="n">${sum('out')}</td><td class="n">${sum('close')}</td></tr></tfoot></table></div>`
+    : '<p style="color:var(--muted)">Không có số liệu trong kỳ này.</p>';
+}
+
+/* ---------------- tổng quan (dashboard) ---------------- */
+let DASH_YEAR = new Date().getFullYear(), dashBusy = false;
+const fmtShort = n => { n = +n || 0; const a = Math.abs(n);
+  return a >= 1e9 ? (n / 1e9).toFixed(1).replace('.', ',') + ' tỷ' : a >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + 'tr'
+    : a >= 1e3 ? Math.round(n / 1e3) + 'k' : String(n); };
+function loadDash() {
+  if (dashBusy) return; dashBusy = true;
+  run().withSuccessHandler(d => { dashBusy = false; renderDash(d); })
+    .withFailureHandler(e => { dashBusy = false; showMsg('Lỗi tải tổng quan: ' + e.message);
+      $('dashBox').innerHTML = '<p style="color:var(--muted)">Chưa tải được tổng quan.</p>'; })
+    .getDashboard(DASH_YEAR, PIN);
+}
+function delta(a, b) {
+  if (!b) return '';
+  const p = Math.round((a - b) / Math.abs(b) * 100);
+  return `<span class="delta ${p >= 0 ? 'up' : 'down'}">${p >= 0 ? '▲' : '▼'} ${Math.abs(p)}% so với tháng trước</span>`;
+}
+const kpi = (label, value, sub, warn) => `<div class="kpi${warn ? ' warn' : ''}">${label}<b>${value}</b>${sub || ''}</div>`;
+function renderDash(d) {
+  const t = d.todayStat, m = d.month, pm = d.prevMonth, o = d.open;
+  const max = Math.max(...d.months.map(x => x.revenue), 1);
+  const curM = new Date().getFullYear() === d.year ? new Date().getMonth() + 1 : 0;
+  const best = d.months.reduce((a, x) => (x.revenue > a.revenue ? x : a), d.months[0]);
+  const y0 = new Date().getFullYear();
+  $('dashBox').innerHTML = `
+    <section>
+      <div class="head2"><h2>Hôm nay • ${esc(d.today)}</h2><button type="button" class="btn-ghost" id="dReload" style="padding:6px 10px">↻ Làm mới</button></div>
+      <div class="kpis">
+        ${kpi('Đơn mới', t.orders)}${kpi('Giá trị đơn (VNĐ)', money(t.value))}${kpi('Đã giao', t.delivered)}
+        ${kpi('Chờ hàng', t.waiting, '', t.waiting > 0)}${kpi('Đang xử lý', t.processing)}${kpi('Đã hủy', t.cancelled)}
+      </div>
+    </section>
+    <section>
+      <h2>Tháng ${esc(d.monthLabel)}</h2>
+      <div class="kpis">
+        ${kpi('Doanh thu', money(m.revenue), delta(m.revenue, pm.revenue))}
+        ${kpi('Lãi gộp (sau giá vốn)', money(m.gross))}
+        ${kpi('Chi phí', money(m.expense))}
+        ${kpi('LỢI NHUẬN', money(m.profit), delta(m.profit, pm.profit), m.profit < 0)}
+        ${kpi('Số đơn', m.orders)}
+      </div>
+    </section>
+    <section>
+      <h2>Cần xử lý</h2>
+      <div class="kpis">
+        ${kpi('Đơn đang chờ hàng', o.waiting, `<span>${money(o.waitingValue)}đ</span>`, o.waiting > 0)}
+        ${kpi('Đơn đang xử lý', o.processing, `<span>${money(o.processingValue)}đ</span>`)}
+        ${kpi('Khách còn nợ', money(d.debtTotal), `<span>${d.debtCount} khách</span>`, d.debtTotal > 0)}
+        ${kpi('Màu/size cần đặt Taobao', d.shortCount, '', d.shortCount > 0)}
+        ${kpi('Tổng tồn kho (cái)', d.stockQty)}
+        ${kpi('Tỷ giá mới nhất', d.rate ? money(d.rate.rate) : '—', d.rate ? `<span>ngày ${esc(d.rate.date)}</span>` : '')}
+      </div>
+    </section>
+    <section>
+      <div class="head2"><h2>Doanh thu theo tháng</h2>
+        <select id="dYear" style="width:auto">${[y0 - 2, y0 - 1, y0].map(y => `<option${y === d.year ? ' selected' : ''}>${y}</option>`).join('')}</select></div>
+      <div class="bars">${d.months.map(x => `<div class="bar"><i style="height:${Math.round(x.revenue / max * 100)}%"></i>
+        ${x === best && x.revenue ? `<span class="lbl" style="bottom:calc(${Math.round(x.revenue / max * 100)}% + 3px)">${fmtShort(x.revenue)}</span>` : ''}
+        <span class="tip">Tháng ${x.m}: doanh thu ${money(x.revenue)}đ<br>Lợi nhuận ${money(x.profit)}đ</span></div>`).join('')}</div>
+      <div class="axis">${d.months.map(x => `<span class="${x.m === curM ? 'cur' : ''}">T${x.m}</span>`).join('')}</div>
+      <details><summary>Xem bảng số liệu (doanh thu, giá vốn, chi phí, lợi nhuận)</summary>
+        <div class="tblwrap" style="margin-top:6px"><table class="mini"><tr><th>Tháng</th><th class="n">Doanh thu</th><th class="n">Lãi gộp</th><th class="n">Chi phí</th><th class="n">Lợi nhuận</th></tr>
+        ${d.months.map(x => `<tr><td>Tháng ${x.m}</td><td class="n">${money(x.revenue)}</td><td class="n">${money(x.gross)}</td><td class="n">${money(x.expense)}</td>
+          <td class="n ${x.profit < 0 ? 'neg' : ''}">${money(x.profit)}</td></tr>`).join('')}
+        <tr><th>Cả năm</th>${['revenue', 'gross', 'expense', 'profit'].map(k => `<th class="n">${money(d.months.reduce((s, x) => s + x[k], 0))}</th>`).join('')}</tr></table></div>
+      </details>
+    </section>
+    <div class="two">
+      <section><h2>Bán chạy tháng này</h2>${d.top.length ? `<table class="mini"><tr><th>Sản phẩm</th><th class="n">SL</th><th class="n">Doanh thu</th></tr>
+        ${d.top.map(p => `<tr><td>${esc(p.code)} — ${esc(p.name)}</td><td class="n">${p.qty}</td><td class="n">${money(p.value)}</td></tr>`).join('')}</table>`
+        : '<p style="color:var(--muted);font-size:13px">Chưa có đơn trong tháng.</p>'}</section>
+      <section><h2>Khách nợ nhiều nhất</h2>${d.debtors.length ? `<table class="mini">
+        ${d.debtors.map(c => `<tr><td><a href="#" class="dCust" data-code="${esc(c.code)}">${esc(c.code)} — ${esc(c.name)}</a></td>
+          <td class="n debt">${money(c.debt)}đ</td></tr>`).join('')}</table>`
+        : '<p style="color:var(--muted);font-size:13px">Không có khách nợ. ✔</p>'}</section>
+      <section><h2>Cần đặt Taobao</h2>${d.short.length ? `<table class="mini"><tr><th>Sản phẩm</th><th>Màu / size</th><th class="n">Thiếu</th></tr>
+        ${d.short.map(x => `<tr><td>${esc(x.code)} — ${esc(x.name)}</td><td>${esc(x.color)} ${esc(x.size)}</td><td class="n neg">${x.need}</td></tr>`).join('')}</table>
+        ${d.shortCount > d.short.length ? `<div style="font-size:12px;color:var(--muted);margin-top:6px">… và ${d.shortCount - d.short.length} màu/size khác (xem mục Sản phẩm, lọc "Âm kho").</div>` : ''}`
+        : '<p style="color:var(--muted);font-size:13px">Không có màu/size nào âm kho. ✔</p>'}</section>
+      <section><h2>Cảnh báo</h2>${d.warnings.length ? d.warnings.map(w => `<div style="font-size:13px;margin-bottom:6px"><b>${esc(w.label)}</b><br>
+        <span class="neg" style="font-weight:normal">${esc(w.text)}</span></div>`).join('') : '<p style="color:var(--muted);font-size:13px">Không có cảnh báo. ✔</p>'}</section>
+    </div>`;
+  $('dReload').onclick = loadDash;
+  $('dYear').onchange = () => { DASH_YEAR = +$('dYear').value; loadDash(); };
+  document.querySelectorAll('.dCust').forEach(a => a.onclick = ev => { ev.preventDefault(); showView('cust'); $('cQ').value = a.dataset.code; loadCustomer(); });
+}
+
+/* ---------------- tỷ giá ---------------- */
+let tgOldDay = '';
+function loadRates() {
+  if (!$('tgDay').value && D) $('tgDay').value = D.today;
+  run().withSuccessHandler(list => {
+    const now = list[0];
+    $('tgNow').textContent = now ? money(now.rate) : '—';
+    $('tgNowDate').textContent = now ? 'ngày ' + now.date : '';
+    $('tgList').innerHTML = list.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th>Ngày</th><th class="n">Tỷ giá</th><th>Ghi chú</th><th></th></tr></thead>
+      <tbody>${list.map(r => `<tr><td>${esc(r.date)}</td><td class="n"><b>${money(r.rate)}</b></td><td>${esc(r.note)}</td>
+        <td class="n"><span class="rowbtns" style="justify-content:flex-end"><button type="button" class="btn-ghost tgEdit" data-day="${r.day}" data-rate="${r.rate}" data-note="${esc(r.note)}">Sửa</button>
+        <button type="button" class="btn-red tgDel" data-day="${r.day}" data-date="${esc(r.date)}">Xóa</button></span></td></tr>`).join('')}</tbody></table></div>`
+      : '<p style="color:var(--muted)">Chưa có tỷ giá nào.</p>';
+    document.querySelectorAll('.tgEdit').forEach(b => b.onclick = () => {
+      tgOldDay = b.dataset.day; $('tgDay').value = b.dataset.day; $('tgRate').value = b.dataset.rate; $('tgNote').value = b.dataset.note;
+      $('tgSave').textContent = '✔ Cập nhật'; $('tgRate').focus(); window.scrollTo(0, 0);
+    });
+    document.querySelectorAll('.tgDel').forEach(b => b.onclick = () => {
+      if (confirm('Xóa tỷ giá ngày ' + b.dataset.date + '?\nCác lô nhập dùng tỷ giá này sẽ chuyển sang tỷ giá gần nhất trước đó (giá vốn có thể đổi).'))
+        act('deleteRate', [b.dataset.day], 'Đã xóa tỷ giá ngày ' + b.dataset.date + '.', loadRates);
+    });
+  }).withFailureHandler(e => showMsg('Lỗi tải tỷ giá: ' + e.message)).listRates(PIN);
+}
+$('tgSave').onclick = () => {
+  clearMsg();
+  const rate = num($('tgRate').value), day = $('tgDay').value;
+  if (!day) return showMsg('Chọn ngày.');
+  if (rate < 1000 || rate > 10000) return showMsg('Tỷ giá ' + rate + ' có vẻ sai (thường khoảng 3.000 – 4.500).');
+  const dd = day.split('-').reverse().join('/');
+  if (!confirm(`Lưu tỷ giá ${money(rate)} cho ngày ${dd}?`)) return;
+  act('saveRate', [{ day, rate, note: $('tgNote').value.trim(), oldDay: tgOldDay }],
+    r => (r.added ? 'Đã thêm' : 'Đã cập nhật') + ' tỷ giá ' + money(r.rate) + ' ngày ' + dd + '.',
+    () => { tgOldDay = ''; $('tgRate').value = ''; $('tgNote').value = ''; $('tgSave').textContent = '✔ Lưu tỷ giá'; loadRates(); });
+};
+
+/* ---------------- nhập hàng loạt từ Excel (khách hàng / sản phẩm) ---------------- */
+// thư viện đọc/ghi Excel chỉ tải khi cần
+let xlsxLoading = null;
+function needXlsx() {
+  if (window.XLSX) return Promise.resolve();
+  return xlsxLoading || (xlsxLoading = new Promise((ok, fail) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload = ok; sc.onerror = () => { xlsxLoading = null; fail(new Error('Không tải được thư viện Excel – kiểm tra mạng.')); };
+    document.head.appendChild(sc);
+  }));
+}
+const IMP = {
+  cust: {
+    title: 'Nhập khách hàng từ Excel', fn: 'importCustomers', sheet: 'KhachHang', dupLabel: 'SĐT đã có',
+    cols: [['name', 'Tên khách *', ['ten khach', 'ho va ten', 'ho ten', 'ten kh', 'khach hang', 'ten']],
+           ['phone', 'SĐT', ['sdt', 'so dien thoai', 'dien thoai', 'phone', 'zalo']],
+           ['address', 'Địa chỉ', ['dia chi']], ['facebook', 'Facebook', ['facebook', 'fb']],
+           ['group', 'Nhóm khách', ['nhom']]],
+    sample: [['Chị Lan', '0901234567', 'Q.1, TP.HCM', '', 'Khách lẻ'], ['Shop Hoa', '0912345678', 'Hà Nội', 'https://facebook.com/shophoa', 'Khách sỉ']],
+    key: r => String(r.phone || '').replace(/\D/g, ''),
+    have: () => new Set(D.customers.map(c => String(c.phone).replace(/\D/g, '')).filter(Boolean)),
+    fix: r => { r.phone = String(r.phone ?? '').trim(); if (/^\d{9}$/.test(r.phone)) r.phone = '0' + r.phone;
+      if (r.group && !GROUPS.includes(r.group)) r.group = GROUPS.find(g => norm(g) === norm(r.group)) || r.group; return r.name ? '' : 'Thiếu tên'; },
+  },
+  prod: {
+    title: 'Nhập sản phẩm từ Excel', fn: 'importProducts', sheet: 'SanPham', dupLabel: 'Mã đã có',
+    cols: [['code', 'Mã hàng (trống = tự cấp)', ['ma hang', 'ma sp', 'ma san pham', 'ma']],
+           ['name', 'Tên sản phẩm *', ['ten san pham', 'ten sp', 'ten hang', 'ten']],
+           ['price', 'Giá bán (VNĐ)', ['gia ban']], ['priceCny', 'Giá nhập (tệ)', ['gia nhap', 'gia te', 'te']],
+           ['ship', 'Ship + phí DV /sp (VNĐ)', ['ship', 'phi']], ['link', 'Link Taobao', ['link', 'taobao']]],
+    sample: [['SP20', 'Áo thun basic', 129000, 22.5, 15000, 'https://item.taobao.com/...'], ['', 'Quần short thể thao', 159000, 30, 15000, '']],
+    key: r => String(r.code || '').trim().toUpperCase(),
+    have: () => new Set(D.products.map(p => p.code.toUpperCase())),
+    fix: r => { r.code = String(r.code ?? '').trim();
+      r.price = r.price === '' ? '' : num(r.price);
+      ['priceCny', 'ship'].forEach(k => { r[k] = r[k] === '' ? '' : typeof r[k] === 'number' ? r[k] : +String(r[k]).replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.') || 0; });
+      return r.name ? '' : 'Thiếu tên'; },
+  },
+};
+let impRows = [];
+function openImport(kind) {
+  const cfg = IMP[kind];
+  $('mTitle').textContent = cfg.title;
+  $('mBody').innerHTML = `<div class="full" style="font-size:13px">
+      File Excel (.xlsx, .xls) hoặc .csv, <b>dòng đầu là tiêu đề cột</b>: ${cfg.cols.map(c => esc(c[1])).join(', ')}.
+      <br><a href="#" id="impTpl">⬇ Tải file mẫu</a></div>
+    <div class="full"><input type="file" id="impFile" accept=".xlsx,.xls,.csv"></div>
+    <div class="full"><label>Nếu đã có (${esc(cfg.dupLabel)})</label>
+      <select id="impMode"><option value="skip">Bỏ qua, giữ nguyên dữ liệu cũ</option><option value="update">Cập nhật theo file</option></select></div>
+    <div class="full" id="impOut"></div>`;
+  impRows = [];
+  $('mSave').textContent = 'Nhập vào hệ thống'; $('mSave').disabled = true;
+  $('modal').style.display = 'flex';
+  $('impTpl').onclick = ev => { ev.preventDefault(); needXlsx().then(() => {
+    const ws = XLSX.utils.aoa_to_sheet([cfg.cols.map(c => c[1].replace(' *', '').replace(' (trống = tự cấp)', ''))].concat(cfg.sample));
+    ws['!cols'] = cfg.cols.map(() => ({ wch: 22 }));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, cfg.sheet);
+    XLSX.writeFile(wb, 'Mau_nhap_' + cfg.sheet + '.xlsx');
+  }).catch(e => alert(e.message)); };
+  $('impFile').onchange = () => readImport(kind);
+  $('impMode').onchange = () => impRows.length && previewImport(kind);
+  mSubmit = () => {
+    const ok = impRows.filter(r => !r._err);
+    if (!ok.length) return alert('Không có dòng hợp lệ để nhập.');
+    if (!confirm(`Nhập ${ok.length} dòng vào ${kind === 'cust' ? 'MA_KH' : 'MA_SP'}?`)) return;
+    const rows = ok.map(r => { const o = { line: r._line }; cfg.cols.forEach(([k]) => { o[k] = r[k]; }); return o; });
+    act(cfg.fn, [rows, $('impMode').value], r => `Đã nhập: thêm ${r.added}, cập nhật ${r.updated}, bỏ qua ${r.skipped}`
+      + (r.errors.length ? `, lỗi ${r.errors.length} (dòng ${r.errors.map(e => e.line).join(', ')})` : '') + '.',
+      () => { $('mSave').textContent = 'Lưu'; kind === 'cust' ? renderCusts() : renderStock(); });
+  };
+}
+function readImport(kind) {
+  const f = $('impFile').files[0]; if (!f) return;
+  $('impOut').innerHTML = '<p style="color:var(--muted)">Đang đọc file…</p>';
+  needXlsx().then(() => f.arrayBuffer()).then(buf => {
+    const wb = XLSX.read(buf, { type: 'array' });
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+    const cfg = IMP[kind];
+    // tìm dòng tiêu đề trong 15 dòng đầu (dòng có nhiều tên cột khớp nhất)
+    let hi = -1, map = null, best = 0;
+    aoa.slice(0, 15).forEach((row, i) => {
+      const m = {}, used = new Set();
+      cfg.cols.forEach(([k, , keys]) => {
+        const j = row.findIndex((h, jj) => !used.has(jj) && keys.some(key => { const n = norm(String(h).trim()); return n === key || n.startsWith(key + ' ') || (key.length > 3 && n.includes(key)); }));
+        if (j >= 0) { m[k] = j; used.add(j); }
+      });
+      const c = Object.keys(m).length;
+      if (c > best) { best = c; hi = i; map = m; }
+    });
+    const need = kind === 'cust' ? 'name' : 'name';
+    if (!map || map[need] === undefined) throw new Error('Không tìm thấy cột "' + cfg.cols.find(c => c[0] === need)[1] + '" – dùng file mẫu cho đúng tiêu đề.');
+    impRows = aoa.slice(hi + 1).map((row, i) => {
+      const r = { _line: hi + i + 2 };
+      cfg.cols.forEach(([k]) => { const v = map[k] === undefined ? '' : row[map[k]]; r[k] = typeof v === 'string' ? v.trim() : v; });
+      return r;
+    }).filter(r => cfg.cols.some(([k]) => r[k] !== '' && r[k] !== null));
+    impRows.forEach(r => { r._err = cfg.fix(r); });
+    previewImport(kind, Object.keys(map));
+  }).catch(e => { $('impOut').innerHTML = `<p class="neg">${esc(e.message)}</p>`; $('mSave').disabled = true; });
+}
+function previewImport(kind, found) {
+  const cfg = IMP[kind], have = cfg.have(), upd = $('impMode').value === 'update';
+  impRows.forEach(r => { r._dup = !r._err && cfg.key(r) && have.has(cfg.key(r)); });
+  const bad = impRows.filter(r => r._err).length, dup = impRows.filter(r => r._dup).length;
+  const add = impRows.length - bad - dup;
+  $('impOut').innerHTML = `<div class="imp-sum"><b>${impRows.length} dòng</b><b class="pos">${add} mới</b>
+      <b style="color:var(--amber)">${dup} ${esc(cfg.dupLabel.toLowerCase())} → ${upd ? 'cập nhật' : 'bỏ qua'}</b>${bad ? `<b class="neg">${bad} lỗi (không nhập)</b>` : ''}</div>
+    ${found ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">Đã nhận cột: ${cfg.cols.filter(c => found.includes(c[0])).map(c => esc(c[1])).join(', ')}</div>` : ''}
+    <div class="imp-prev"><table><tr><th>Dòng</th>${cfg.cols.map(c => `<th>${esc(c[1])}</th>`).join('')}<th></th></tr>
+      ${impRows.slice(0, 300).map(r => `<tr class="${r._err ? 'bad' : r._dup ? 'dup' : ''}"><td>${r._line}</td>
+        ${cfg.cols.map(([k]) => `<td>${esc(r[k])}</td>`).join('')}<td>${r._err ? '⚠ ' + esc(r._err) : r._dup ? (upd ? 'cập nhật' : 'bỏ qua') : 'mới'}</td></tr>`).join('')}
+    </table></div>${impRows.length > 300 ? `<div style="font-size:12px;color:var(--muted)">… chỉ xem trước 300 dòng đầu, khi nhập vẫn nhập đủ.</div>` : ''}`;
+  $('mSave').disabled = !impRows.some(r => !r._err) || (!upd && add === 0);
+}
+$('cImp').onclick = () => openImport('cust');
+$('pImp').onclick = () => openImport('prod');
+// đóng hộp thoại thì trả lại chữ nút Lưu
+$('mCancel').addEventListener('click', () => { $('mSave').textContent = 'Lưu'; $('mSave').disabled = false; });
+
+/* ---------------- tồn kho theo màu / size (quản lý + nhân viên) ---------------- */
+function renderTon() {
+  if (!D) return;
+  const q = norm($('tQ').value.trim()), f = $('tF').value;
+  const name = {}; D.products.forEach(p => { name[p.code] = p; });
+  const rows = D.stock.filter(s => {
+    const p = name[s.code] || {};
+    if (q && !norm([s.code, p.name, s.color, s.size].join(' ')).includes(q)) return false;
+    if (f === 'pos') return s.qty > 0;
+    if (f === 'neg') return s.qty < 0;
+    if (f === 'zero') return s.qty === 0;
+    return true;
+  });
+  const pos = D.stock.reduce((a, s) => a + Math.max(0, s.qty), 0), neg = D.stock.filter(s => s.qty < 0).length;
+  $('tonSum').textContent = `Tổng tồn ${pos} cái • ${neg} màu/size âm kho`;
+  $('tonBox').innerHTML = rows.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th style="width:56px">Ảnh</th><th>Mã</th><th>Tên sản phẩm</th><th>Màu</th><th>Size</th>
+      <th class="n">Đã nhập</th><th class="n">Đã bán</th><th class="n">Còn tồn</th><th>Trạng thái</th></tr></thead><tbody>
+    ${rows.map(s => { const p = name[s.code] || {};
+      return `<tr><td>${thumb(firstImg(p), 'sm')}</td><td>${esc(s.code)}</td><td>${esc(p.name || '')}</td><td>${esc(s.color) || '—'}</td><td>${esc(s.size) || '—'}</td>
+        <td class="n">${s.inQty}</td><td class="n">${s.outQty}</td><td class="n ${qcls(s.qty)}"><b>${s.qty}</b></td>
+        <td class="st"><span class="tag ${stockTag(s.qty)[0]}">${stockTag(s.qty)[1]}</span></td></tr>`; }).join('')}
+    </tbody></table></div>` : '<p style="color:var(--muted)">Không có dòng tồn kho phù hợp.</p>';
+}
+$('tQ').addEventListener('input', renderTon);
+$('tF').onchange = renderTon;
+$('tReload').onclick = () => load();
+$('tCsv').onclick = () => { if (!D) return; const name = {}; D.products.forEach(p => { name[p.code] = p.name; });
+  dlCsv('TonKho_' + D.today + '.csv', ['Mã', 'Tên sản phẩm', 'Màu', 'Size', 'Đã nhập', 'Đã bán', 'Còn tồn', 'Trạng thái'],
+    D.stock.map(s => [s.code, name[s.code] || '', s.color, s.size, s.inQty, s.outQty, s.qty, stockTag(s.qty)[1]])); };
+
+/* ---------------- báo cáo ngày (quản lý) ---------------- */
+function initReport() { if (!$('bcFrom').value) bcRange('0'); }
+function bcRange(r) {
+  const t = new Date(); let f = new Date(t), to = new Date(t);
+  if (r === '1') { f.setDate(t.getDate() - 1); to = new Date(f); }
+  else if (r === '7') f.setDate(t.getDate() - 6);
+  else if (r === 'm') f = new Date(t.getFullYear(), t.getMonth(), 1);
+  else if (r === 'pm') { f = new Date(t.getFullYear(), t.getMonth() - 1, 1); to = new Date(t.getFullYear(), t.getMonth(), 0); }
+  $('bcFrom').value = ymd(f); $('bcTo').value = ymd(to); loadReport();
+}
+document.querySelectorAll('.bcq').forEach(b => b.onclick = () => bcRange(b.dataset.r));
+$('bcGo').onclick = loadReport;
+let BC = null;
+function loadReport() {
+  if ($('bcFrom').value > $('bcTo').value) return showMsg('Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.');
+  $('app').classList.add('loading');
+  run().withSuccessHandler(r => { $('app').classList.remove('loading'); BC = r; renderReport(); })
+    .withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Lỗi báo cáo: ' + e.message); })
+    .getDailyReport($('bcFrom').value, $('bcTo').value, PIN);
+}
+const dmy = s => s.split('-').reverse().join('/');
+function renderReport() {
+  const r = BC, k = r.kqkd;
+  const tbl = (head, obj) => `<table class="mini"><tr><th>${head}</th><th class="n">Số đơn</th><th class="n">Giá trị (VNĐ)</th></tr>
+    ${Object.keys(obj).map(x => `<tr><td>${esc(x)}</td><td class="n">${obj[x].count || '-'}</td><td class="n">${obj[x].value ? money(obj[x].value) : '-'}</td></tr>`).join('')}</table>`;
+  const cls = { 'Chờ hàng': 'b-cho', 'Đang xử lý': 'b-xl', 'Đã giao': 'b-giao', 'Đã hủy': 'b-huy' };
+  $('bcBox').innerHTML = `
+    <section><h2>Tổng kết từ ${dmy(r.from)} đến ${dmy(r.to)}</h2>
+      <div class="kpis">${kpi('Tổng đơn tạo', r.total)}${kpi('Đơn hợp lệ (không tính hủy)', r.valid)}
+        ${kpi('Giá trị đơn hợp lệ (VNĐ)', money(r.revenue))}${kpi('LỢI NHUẬN (VNĐ)', money(r.profit), '', r.profit < 0)}</div></section>
+    <div class="rep3">
+      <section><h2>Theo trạng thái đơn</h2>${tbl('Trạng thái', r.byStatus)}</section>
+      <section><h2>Theo loại hàng (đơn hợp lệ)</h2>${tbl('Loại hàng', r.byType)}
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Order = lúc lên đơn kho (đúng màu + size) không đủ hàng.</div></section>
+      <section><h2>Theo nhóm khách (đơn hợp lệ)</h2>${tbl('Nhóm khách', r.byGroup)}</section>
+    </div>
+    <div class="rep3">
+      <section><h2>Kết quả kinh doanh (đơn hợp lệ)</h2><table class="mini">
+        <tr><td>Doanh số đặt hàng</td><td class="n">${money(k.revenue)}</td></tr><tr><td>Giá vốn hàng bán</td><td class="n">${money(k.cost)}</td></tr>
+        <tr><td>Lãi gộp</td><td class="n">${money(k.gross)}</td></tr><tr><td>Chi phí trong kỳ</td><td class="n">${money(k.expense)}</td></tr>
+        <tr><th>LỢI NHUẬN</th><th class="n ${k.profit < 0 ? 'neg' : ''}">${money(k.profit)}</th></tr>
+        <tr><td>Tiền đã thu từ đơn trong kỳ</td><td class="n">${money(k.paid)}</td></tr><tr><td>Khách còn nợ từ đơn trong kỳ</td><td class="n debt">${money(k.debt)}</td></tr></table></section>
+      <section><h2>Cần đặt Taobao (hiện tại)</h2><table class="mini">
+        <tr><td>Số dòng màu/size cần đặt</td><td class="n neg">${r.short.rows}</td></tr><tr><td>Tổng số lượng cần đặt</td><td class="n neg">${r.short.qty}</td></tr></table>
+        <a href="#" id="bcToKho" style="font-size:12px">Xem chi tiết ở mục Kho →</a></section>
+    </div>
+    <section><div class="head2"><h2>Chi tiết đơn bán – ${r.lineCount} dòng hàng</h2><input id="bcQ" placeholder="Lọc mã đơn / khách / SP…" style="max-width:260px"></div>
+      <div class="tblwrap"><table class="xnt" id="bcTbl"><thead><tr><th>Ngày</th><th>Mã đơn</th><th>Khách</th><th>Sản phẩm</th><th>Màu</th><th>Size</th>
+        <th class="n">SL</th><th class="n">Thành tiền</th><th class="n">Đã thu</th><th class="n">Còn nợ</th><th>Trạng thái</th><th>Loại hàng</th><th class="n">Lãi</th></tr></thead>
+      <tbody>${r.lines.map(l => `<tr data-s="${esc(norm([l.code, l.cust, l.custName, l.prod, l.prodName].join(' ')))}"${l.cancelled ? ' style="text-decoration:line-through;color:#94A3B8"' : ''}>
+        <td>${esc(l.date)}</td><td>${esc(l.code)}</td><td>${esc(l.cust)} — ${esc(l.custName)}</td><td>${esc(l.prod)} — ${esc(l.prodName)}</td>
+        <td>${esc(l.color)}</td><td>${esc(l.size)}</td><td class="n">${l.qty}</td><td class="n">${money(l.amount)}</td><td class="n">${money(l.paid)}</td>
+        <td class="n ${l.debt > 0 ? 'debt' : ''}">${money(l.debt)}</td><td><span class="badge ${cls[l.status] || ''}">${esc(l.status)}</span></td>
+        <td>${esc(l.type)}</td><td class="n">${money(l.profit)}</td></tr>`).join('')}</tbody></table></div>
+      ${r.lineCount >= 500 ? '<div style="font-size:12px;color:var(--muted)">Chỉ hiện 500 dòng đầu – chọn khoảng ngày ngắn hơn để xem hết.</div>' : ''}</section>`;
+  $('bcQ').addEventListener('input', () => { const q = norm($('bcQ').value.trim());
+    document.querySelectorAll('#bcTbl tbody tr').forEach(tr => { tr.style.display = !q || tr.dataset.s.includes(q) ? '' : 'none'; }); });
+  $('bcToKho').onclick = ev => { ev.preventDefault(); showView('kho'); $('tF').value = 'neg'; renderTon(); };
+}
+
+load();
+if (STAFF) showView('list'); else loadDash();
+</script>
+</body>
+</html>

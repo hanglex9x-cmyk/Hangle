@@ -495,6 +495,7 @@
         <input id="posQ" placeholder="Tìm sản phẩm (mã / tên)…">
         <div class="tiles" id="posTiles"></div>
         <datalist id="prodList"></datalist>
+        <datalist id="prodListPos"></datalist>
         <datalist id="colorList"></datalist>
         <datalist id="sizeList"></datalist>
       </div>
@@ -623,6 +624,10 @@ function applyInit(d) {
       `<option value="${esc(c.code)} — ${esc(c.name)}${c.phone ? ' — ' + esc(c.phone) : ''}">`).join('');
     $('prodList').innerHTML = d.products.map(p =>
       `<option value="${esc(p.code)} — ${esc(p.name)}">${money(p.price)}đ • tồn ${p.stock}</option>`).join('');
+    // [VÁ YC3] Gợi ý riêng của màn Tạo đơn: ẩn SP hết hàng (tồn = 0). SP âm kho (đang chờ hàng Taobao) vẫn hiện để bán ORDER.
+    // prodList (dùng ở màn Nhập hàng) giữ ĐẦY ĐỦ — SP tồn 0 vẫn phải nhập hàng lại được.
+    $('prodListPos').innerHTML = d.products.filter(p => Number(p.stock) !== 0).map(p =>
+      `<option value="${esc(p.code)} — ${esc(p.name)}">${money(p.price)}đ • tồn ${p.stock}</option>`).join('');
     $('colorList').innerHTML = d.colors.map(c => `<option value="${esc(c)}">`).join('');
     $('sizeList').innerHTML = d.sizes.map(c => `<option value="${esc(c)}">`).join('');
     $('app').classList.remove('loading');
@@ -632,29 +637,52 @@ function applyInit(d) {
 }
 
 function customer() {
+  // [VÁ YC1] Ưu tiên mã khách đã CHỌN từ gợi ý (dataset.code). Chỉ khi chưa chọn mới suy từ nội dung ô:
+  // ô đang chứa đúng mã/tên/SĐT hoàn chỉnh của một khách thì coi là khách đó (giữ tương thích cũ).
+  const dc = $('custSearch').dataset.code;
+  if (dc) { const byCode = D.customers.find(c => c.code === dc); if (byCode) return byCode; }
   const v = $('custSearch').value.split(' — ')[0].trim();
+  // CHÌA KHÓA CỦA LỖI: bản cũ không chặn v rỗng — v='' vẫn khớp c.phone='' của khách đầu tiên không có SĐT
+  // (đúng khách ngomaingocquynhzl trong video) nên mỗi lần xóa trắng ô là handler điền lại tên đầy đủ.
+  if (!v) return null;
   return D.customers.find(c => c.code === v || c.name === v || c.phone === v);
 }
 
 // khách: gõ tên/SĐT/mã → trùng khách cũ thì dùng khách cũ, không thì tạo khách mới
 const custByPhone = ph => { ph = String(ph).replace(/\D/g, ''); return ph.length >= 9 ? D.customers.find(c => String(c.phone).replace(/\D/g, '') === ph) : null; };
 function showCust() {
-  const c = customer() || custByPhone($('ncPhone').value);
+  // [VÁ YC1] Chỉ tra khách theo SĐT khi ô Tên khách đang TRỐNG. Trước đây: đã chọn khách cũ (SĐT tự điền)
+  // rồi sửa tên thành khách mới, showCust()/Tạo đơn vẫn lẳng lặng gắn đơn cho khách CŨ theo SĐT.
+  const c = customer() || ($('custSearch').value.trim() ? null : custByPhone($('ncPhone').value));
   $('custInfo').innerHTML = c ? `Khách cũ <b>${esc(c.code)}</b> · ${esc(c.name)} · ${esc(c.group)}`
     + (num(c.debt) > 0 ? ` · <span class="stock-low">Đang nợ ${esc(c.debt)}đ</span>` : '')
     : ($('custSearch').value.trim() ? ($('ncCode').value.trim() ? 'Khách mới – sẽ tạo với Mã KH: <b>' + esc($('ncCode').value.trim()) + '</b>' : 'Khách mới – sẽ tự tạo mã KH khi tạo đơn.') : '');
   return c;
 }
+// [VÁ YC1] Gốc lỗi "xóa tên không được": handler cũ chạy trên MỌI sự kiện 'input' và hễ customer() khớp
+// là GHI ĐÈ custSearch.value = c.name + ghi đè SĐT/địa chỉ. Sau khi chọn gợi ý, ô chứa đúng tên khách
+// (tự nó đã khớp c.name) nên ô bị "khóa cứng" vào tên đó; trên iOS Safari, bộ chọn datalist áp lại giá trị
+// gợi ý ("mã — tên — SĐT") là handler lại snap về tên đầy đủ. Bản vá: CHỈ nhận diện + tự điền khi giá trị
+// ô là một lựa chọn gợi ý nguyên vẹn (chứa ' — ' và phần đầu là mã khách) — tức đúng khoảnh khắc chọn.
+// Gõ/xóa/sửa tay: tuyệt đối không ghi lại ô, chỉ gỡ dataset.code khi nội dung đã khác tên khách đã chọn.
 $('custSearch').addEventListener('input', () => {
-  const c = customer();
-  if (c) { $('custSearch').value = c.name; $('ncPhone').value = c.phone || ''; $('ncAddr').value = c.address || ''; $('custSearch').dataset.code = c.code; }
-  else delete $('custSearch').dataset.code;
+  const raw = $('custSearch').value;
+  const head = raw.split(' — ')[0].trim();
+  const picked = raw.includes(' — ') ? D.customers.find(c => c.code === head) : null;
+  if (picked) {
+    $('custSearch').value = picked.name; $('ncPhone').value = picked.phone || ''; $('ncAddr').value = picked.address || '';
+    $('custSearch').dataset.code = picked.code;
+  } else if ($('custSearch').dataset.code) {
+    const locked = D.customers.find(c => c.code === $('custSearch').dataset.code);
+    if (!locked || raw !== locked.name) delete $('custSearch').dataset.code;
+  }
   showCust();
 });
 $('ncCode').addEventListener('input', () => { showCust(); });
 $('ncPhone').addEventListener('input', () => {
   const c = custByPhone($('ncPhone').value);
-  if (c && !customer()) { $('custSearch').value = c.name; $('custSearch').dataset.code = c.code; if (!$('ncAddr').value) $('ncAddr').value = c.address || ''; }
+  // [VÁ YC1] Chỉ tự điền tên khi ô Tên khách đang TRỐNG — không bao giờ ghi đè tên người dùng đã gõ/sửa.
+  if (c && !$('custSearch').value.trim()) { $('custSearch').value = c.name; $('custSearch').dataset.code = c.code; if (!$('ncAddr').value) $('ncAddr').value = c.address || ''; }
   showCust();
 });
 
@@ -664,7 +692,7 @@ function addItem(pre) {
   div.innerHTML = `<div class="ln"><span class="pic"></span><span class="sum">Sản phẩm gõ tay</span>
       <input class="qty" inputmode="numeric" value="${pre ? pre.qty : 1}" title="Số lượng"><span class="amt"></span>
       <button type="button" class="btn-x" title="Xóa">✕</button></div>
-    <div class="ed"><input class="code" list="prodList" placeholder="Mã / tên sản phẩm"><input class="color" list="colorList" placeholder="Màu"><input class="size" list="sizeList" placeholder="Size"></div>
+    <div class="ed"><input class="code" list="prodListPos" placeholder="Mã / tên sản phẩm"><input class="color" list="colorList" placeholder="Màu"><input class="size" list="sizeList" placeholder="Size"></div>
     <div class="meta"></div>`;
   if (pre) { div.querySelector('.code').value = pre.code; div.querySelector('.color').value = pre.color; div.querySelector('.size').value = pre.size; }
   div.querySelector('.btn-x').onclick = () => { div.remove(); recalc(); };
@@ -679,7 +707,9 @@ $('addItem').onclick = () => addItem();
 function renderPos() {
   if (!D) return;
   const q = norm($('posQ').value.trim());
-  const ps = D.products.filter(p => !q || norm(p.code + ' ' + p.name).includes(q));
+  // [VÁ YC3] Ẩn SP hết hàng (tồn = 0) khỏi lưới Tạo đơn. SP tồn ÂM (đã bán chờ hàng Taobao) vẫn hiện:
+  // đó là hàng ORDER — ẩn cả âm kho sẽ mất 30+/36 SP đang bán (số liệu rà 20/10/2026, xem BAO_CAO.md).
+  const ps = D.products.filter(p => Number(p.stock) !== 0 && (!q || norm(p.code + ' ' + p.name).includes(q)));
   $('posTiles').innerHTML = ps.map(p => `<button type="button" data-code="${esc(p.code)}"><div class="im">${firstImg(p) ? `<img src="${esc(firstImg(p))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '▢'}</div>
     <div class="t">${esc(p.code)} · ${esc(p.name)}<b>${money(p.price)} đ</b><span style="font-size:12px;color:${p.stock <= 0 ? 'var(--bad)' : 'var(--muted)'}">Tồn ${p.stock}</span></div></button>`).join('')
     || '<p style="color:var(--muted)">Không có sản phẩm phù hợp.</p>';
@@ -777,11 +807,20 @@ function fillVariants(div) {
 }
 
 function readItems() {
-  return [...document.querySelectorAll('.item')].map(d => ({
-    code: prodCode(d.querySelector('.code').value), color: d.querySelector('.color').value.trim(),
-    size: d.querySelector('.size').value.trim(), qty: num(d.querySelector('.qty').value),
-    discount: 0,
-  })).filter(i => i.code);
+  return [...document.querySelectorAll('.item')].map(d => {
+    const code = prodCode(d.querySelector('.code').value);
+    const p = code ? findProd(code) : null;
+    return {
+      code, color: d.querySelector('.color').value.trim(),
+      size: d.querySelector('.size').value.trim(), qty: num(d.querySelector('.qty').value),
+      discount: 0,
+      // [VÁ YC2 - phía client] Chụp ĐƠN GIÁ tại thời điểm tạo đơn, gửi kèm payload.
+      // Máy chủ hiện tại bỏ qua trường lạ này nên gửi kèm là AN TOÀN; khi máy chủ được vá để ghi
+      // giá này thành GIÁ TRỊ TĨNH vào DON_HANG cột K (thay công thức tra MA_SP!J), đơn sẽ khóa giá.
+      // Chi tiết phần máy chủ/Sheet: xem agent-review/BAO_CAO.md mục 2 — client một mình KHÔNG khóa được giá.
+      price: p ? p.price : 0,
+    };
+  }).filter(i => i.code);
 }
 
 function recalc() {
