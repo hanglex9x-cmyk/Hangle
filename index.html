@@ -1083,7 +1083,7 @@ function renderStock() {
         <div class="chips">${colors.map(c => `<span class="chip">${esc(c)}</span>`).join('')}${sizes.map(z => `<span class="chip">${esc(z)}</span>`).join('')}</div>
         <span class="meta">Tồn <b style="color:${p.stock < 0 ? 'var(--bad)' : 'var(--fg)'}">${p.stock}</b> sp · <span class="tag ${tag[0]}">${tag[1]}</span></span>
         <div class="acts"><button type="button" class="btn-ghost pView" data-code="${esc(p.code)}" title="Xem chi tiết">${ICO.eye}</button>
-          <button type="button" class="btn-ghost imgbtn qlOnly" data-code="${esc(p.code)}">${firstImg(p) ? '+ Thêm ảnh' : '+ Ảnh'}</button>
+          <button type="button" class="btn-ghost imgbtn" data-code="${esc(p.code)}">${firstImg(p) ? '+ Thêm ảnh' : '+ Ảnh'}</button>
           <button type="button" class="btn-ghost pEdit" data-code="${esc(p.code)}" title="Sửa">${ICO.pen}</button>
           <button type="button" class="btn-red pDel qlOnly" data-code="${esc(p.code)}" title="Xoá">${ICO.trash}</button></div></div></div>`;
   }).join('') + '</div>' : '<p style="color:var(--muted)">Không tìm thấy sản phẩm.</p>';
@@ -1193,7 +1193,7 @@ function productForm(p) {
     if (isNew && prodImgFile) { saveProductWithImage(o, prodImgFile); return; }
     act('saveProduct', [o], r => 'Đã lưu sản phẩm ' + r.code + (isNew ? '. Bấm "+ Ảnh" để thêm ảnh sau.' : '.'));
   });
-  if (isNew && !STAFF) { $('mBody').insertAdjacentHTML('beforeend', prodImgRow()); wireProdImg(); }
+  if (isNew) { $('mBody').insertAdjacentHTML('beforeend', prodImgRow()); wireProdImg(); } // [22/10/2026] NV tao SP cung kem duoc anh dau
 }
 $('pAdd').onclick = () => productForm(null);
 $('sQ').addEventListener('input', renderStock);
