@@ -626,7 +626,7 @@ function applyInit(d) {
       `<option value="${esc(p.code)} — ${esc(p.name)}">${money(p.price)}đ • tồn ${p.stock}</option>`).join('');
     // [VÁ YC3] Gợi ý riêng của màn Tạo đơn: ẩn SP hết hàng (tồn = 0). SP âm kho (đang chờ hàng Taobao) vẫn hiện để bán ORDER.
     // prodList (dùng ở màn Nhập hàng) giữ ĐẦY ĐỦ — SP tồn 0 vẫn phải nhập hàng lại được.
-    $('prodListPos').innerHTML = d.products.filter(p => Number(p.stock) !== 0).map(p =>
+    $('prodListPos').innerHTML = d.products.map(p => // [22/10/2026] Tao don hien TAT CA SP ke ca het hang (hang ORDER) – bo loc ton = 0
       `<option value="${esc(p.code)} — ${esc(p.name)}">${money(p.price)}đ • tồn ${p.stock}</option>`).join('');
     $('colorList').innerHTML = d.colors.map(c => `<option value="${esc(c)}">`).join('');
     $('sizeList').innerHTML = d.sizes.map(c => `<option value="${esc(c)}">`).join('');
@@ -709,7 +709,7 @@ function renderPos() {
   const q = norm($('posQ').value.trim());
   // [VÁ YC3] Ẩn SP hết hàng (tồn = 0) khỏi lưới Tạo đơn. SP tồn ÂM (đã bán chờ hàng Taobao) vẫn hiện:
   // đó là hàng ORDER — ẩn cả âm kho sẽ mất 30+/36 SP đang bán (số liệu rà 20/10/2026, xem BAO_CAO.md).
-  const ps = D.products.filter(p => Number(p.stock) !== 0 && (!q || norm(p.code + ' ' + p.name).includes(q)));
+  const ps = D.products.filter(p => !q || norm(p.code + ' ' + p.name).includes(q)); // [22/10/2026] hien ca SP het hang o Tao don
   $('posTiles').innerHTML = ps.map(p => `<button type="button" data-code="${esc(p.code)}"><div class="im">${firstImg(p) ? `<img src="${esc(firstImg(p))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '▢'}</div>
     <div class="t">${esc(p.code)} · ${esc(p.name)}<b>${money(p.price)} đ</b><span style="font-size:12px;color:${p.stock <= 0 ? 'var(--bad)' : 'var(--muted)'}">Tồn ${p.stock}</span></div></button>`).join('')
     || '<p style="color:var(--muted)">Không có sản phẩm phù hợp.</p>';
