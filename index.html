@@ -342,7 +342,7 @@
     <section>
       <div class="head2"><h2>Sản phẩm &amp; tồn kho</h2>
         <span class="rowbtns"><button type="button" class="btn-ghost qlOnly" id="pImp">⬆ Nhập Excel</button>
-        <button type="button" class="btn-teal qlOnly" id="pAdd">＋ Thêm sản phẩm</button></span></div>
+        <button type="button" class="btn-teal" id="pAdd">＋ Thêm sản phẩm</button></span></div>
       <div class="grid">
         <div style="grid-column:span 2"><label>Tìm theo mã / tên sản phẩm</label><input id="sQ" placeholder="vd: SP03 hoặc legging"></div>
         <div><label>Lọc</label><select id="sFilter">
@@ -1041,7 +1041,7 @@ function renderStock() {
         <span class="meta">Tồn <b style="color:${p.stock < 0 ? 'var(--bad)' : 'var(--fg)'}">${p.stock}</b> sp · <span class="tag ${tag[0]}">${tag[1]}</span></span>
         <div class="acts"><button type="button" class="btn-ghost pView" data-code="${esc(p.code)}">Chi tiết</button>
           <button type="button" class="btn-ghost imgbtn qlOnly" data-code="${esc(p.code)}">${firstImg(p) ? '+ Thêm ảnh' : '+ Ảnh'}</button>
-          <button type="button" class="btn-ghost pEdit qlOnly" data-code="${esc(p.code)}">Sửa</button>
+          <button type="button" class="btn-ghost pEdit" data-code="${esc(p.code)}">Sửa</button>
           <button type="button" class="btn-red pDel qlOnly" data-code="${esc(p.code)}">Xóa</button></div></div></div>`;
   }).join('') + '</div>' : '<p style="color:var(--muted)">Không tìm thấy sản phẩm.</p>';
   document.querySelectorAll('.pView').forEach(b => b.onclick = () => viewProduct(b.dataset.code));
@@ -1104,7 +1104,7 @@ const PROD_FIELDS = isNew => [
   { k: 'code', label: 'Mã hàng *', ro: !isNew, ph: 'vd: SP08' }, { k: 'name', label: 'Tên sản phẩm *' },
   { k: 'price', label: 'Giá bán (VNĐ)', num: 1 }, { k: 'priceCny', label: 'Giá nhập (tệ)', num: 1 },
   { k: 'ship', label: 'Ship + phí DV /sp (VNĐ)', num: 1 }, { k: 'link', label: 'Link Taobao', full: 1 },
-];
+].filter(f => !STAFF || (f.k !== 'priceCny' && f.k !== 'ship')); // [QUYEN NV 22/10/2026] nhan vien khong thay/khong dien Gia nhap + Ship (gia von)
 let prodImgFile = null; // file ảnh chọn lúc tạo SP mới
 function prodImgRow() {
   return `<div class="full"><label>Ảnh sản phẩm</label>
@@ -1146,10 +1146,11 @@ function productForm(p) {
   openForm(isNew ? 'Thêm sản phẩm' : 'Sửa sản phẩm ' + p.code, PROD_FIELDS(isNew), p || {}, o => {
     if (!o.code || !o.name) return alert('Cần nhập mã hàng và tên sản phẩm.');
     o.isNew = isNew; ['price', 'priceCny', 'ship'].forEach(k => { o[k] = o[k] === '' ? '' : num(o[k]); });
+    if (STAFF) { o.priceCny = ''; o.ship = ''; } // [QUYEN NV] server cung bo qua 2 cot nay voi PIN nhan vien
     if (isNew && prodImgFile) { saveProductWithImage(o, prodImgFile); return; }
     act('saveProduct', [o], r => 'Đã lưu sản phẩm ' + r.code + (isNew ? '. Bấm "+ Ảnh" để thêm ảnh sau.' : '.'));
   });
-  if (isNew) { $('mBody').insertAdjacentHTML('beforeend', prodImgRow()); wireProdImg(); }
+  if (isNew && !STAFF) { $('mBody').insertAdjacentHTML('beforeend', prodImgRow()); wireProdImg(); }
 }
 $('pAdd').onclick = () => productForm(null);
 $('sQ').addEventListener('input', renderStock);
