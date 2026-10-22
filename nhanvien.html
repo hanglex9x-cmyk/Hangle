@@ -505,10 +505,12 @@
         <button type="button" class="linkbtn" id="addItem">+ Gõ tay sản phẩm</button>
         <div class="g2">
           <div><label>Tên khách *</label><input id="custSearch" list="custList" placeholder="Gõ tên / SĐT / mã khách…" autocomplete="off"></div>
-          <div><label>Số điện thoại</label><input id="ncPhone" inputmode="tel"></div>
+          <div><label>Số điện thoại *</label><input id="ncPhone" inputmode="tel"></div>
         </div>
         <datalist id="custList"></datalist>
-        <label>Địa chỉ giao</label><input id="ncAddr">
+        <div id="ncDupWarn" style="display:none;color:var(--bad);font-size:12.5px;margin:2px 0 6px"></div>
+        <label>Địa chỉ giao *</label><input id="ncAddr">
+        <label>Link Facebook *</label><input id="ncFb" placeholder="facebook.com/...">
         <div><label>Mã KH (khách mới — tự đặt, để trống = tự tạo)</label><input id="ncCode" placeholder="vd: ngocmaihn" autocomplete="off"></div>
         <div class="cust-info" id="custInfo"></div>
         <div class="g2">
@@ -650,6 +652,16 @@ function customer() {
 
 // khách: gõ tên/SĐT/mã → trùng khách cũ thì dùng khách cũ, không thì tạo khách mới
 const custByPhone = ph => { ph = String(ph).replace(/\D/g, ''); return ph.length >= 9 ? D.customers.find(c => String(c.phone).replace(/\D/g, '') === ph) : null; };
+// [22/10/2026] Canh bao SDT trung: SDT dang nhap da co khach khac (khong phai khach dang chon)
+function dupPhoneWarn() {
+  const w = $('ncDupWarn'); if (!w) return;
+  const c = custByPhone($('ncPhone').value);
+  const picked = customer();
+  if (c && (!picked || picked.code !== c.code)) {
+    w.textContent = '⚠ SĐT này đã có khách: ' + c.code + ' — ' + c.name + '. Nếu đúng khách này, hãy chọn từ gợi ý để dùng khách cũ, khỏi tạo trùng.';
+    w.style.display = 'block';
+  } else w.style.display = 'none';
+}
 function showCust() {
   // [VÁ YC1] Chỉ tra khách theo SĐT khi ô Tên khách đang TRỐNG. Trước đây: đã chọn khách cũ (SĐT tự điền)
   // rồi sửa tên thành khách mới, showCust()/Tạo đơn vẫn lẳng lặng gắn đơn cho khách CŨ theo SĐT.
@@ -657,6 +669,7 @@ function showCust() {
   $('custInfo').innerHTML = c ? `Khách cũ <b>${esc(c.code)}</b> · ${esc(c.name)} · ${esc(c.group)}`
     + (num(c.debt) > 0 ? ` · <span class="stock-low">Đang nợ ${esc(c.debt)}đ</span>` : '')
     : ($('custSearch').value.trim() ? ($('ncCode').value.trim() ? 'Khách mới – sẽ tạo với Mã KH: <b>' + esc($('ncCode').value.trim()) + '</b>' : 'Khách mới – sẽ tự tạo mã KH khi tạo đơn.') : '');
+  dupPhoneWarn();
   return c;
 }
 // [VÁ YC1] Gốc lỗi "xóa tên không được": handler cũ chạy trên MỌI sự kiện 'input' và hễ customer() khớp
@@ -670,7 +683,7 @@ $('custSearch').addEventListener('input', () => {
   const head = raw.split(' — ')[0].trim();
   const picked = raw.includes(' — ') ? D.customers.find(c => c.code === head) : null;
   if (picked) {
-    $('custSearch').value = picked.name; $('ncPhone').value = picked.phone || ''; $('ncAddr').value = picked.address || '';
+    $('custSearch').value = picked.name; $('ncPhone').value = picked.phone || ''; $('ncAddr').value = picked.address || ''; $('ncFb').value = picked.facebook || '';
     $('custSearch').dataset.code = picked.code;
   } else if ($('custSearch').dataset.code) {
     const locked = D.customers.find(c => c.code === $('custSearch').dataset.code);
@@ -682,7 +695,7 @@ $('ncCode').addEventListener('input', () => { showCust(); });
 $('ncPhone').addEventListener('input', () => {
   const c = custByPhone($('ncPhone').value);
   // [VÁ YC1] Chỉ tự điền tên khi ô Tên khách đang TRỐNG — không bao giờ ghi đè tên người dùng đã gõ/sửa.
-  if (c && !$('custSearch').value.trim()) { $('custSearch').value = c.name; $('custSearch').dataset.code = c.code; if (!$('ncAddr').value) $('ncAddr').value = c.address || ''; }
+  if (c && !$('custSearch').value.trim()) { $('custSearch').value = c.name; $('custSearch').dataset.code = c.code; if (!$('ncAddr').value) $('ncAddr').value = c.address || ''; if (!$('ncFb').value) $('ncFb').value = c.facebook || ''; }
   showCust();
 });
 
@@ -853,7 +866,13 @@ $('submit').onclick = () => {
     const ncCode = $('ncCode').value.trim();
     if (ncCode && /\s/.test(ncCode)) return showMsg('Mã KH không được chứa khoảng trắng.');
     if (ncCode && D.customers.some(x => x.code.toLowerCase() === ncCode.toLowerCase())) return showMsg('Mã KH "' + ncCode + '" đã có — chọn khách cũ hoặc đặt mã khác.');
-    payload.newCustomer = { newCode: ncCode, name, phone: $('ncPhone').value.trim(), address: $('ncAddr').value.trim(), facebook: '', group: $('ncGroup').value };
+    const ncPhoneV = $('ncPhone').value.trim(), ncAddrV = $('ncAddr').value.trim(), ncFbV = $('ncFb').value.trim();
+    if (!ncPhoneV) return showMsg('Khách mới cần nhập Số điện thoại.');
+    if (!ncAddrV) return showMsg('Khách mới cần nhập Địa chỉ giao.');
+    if (!ncFbV) return showMsg('Khách mới cần nhập Link Facebook.');
+    const dupP = custByPhone(ncPhoneV);
+    if (dupP) return showMsg('SĐT này đã có khách ' + dupP.code + ' — ' + dupP.name + '. Hãy chọn khách cũ từ gợi ý thay vì tạo khách mới trùng SĐT.');
+    payload.newCustomer = { newCode: ncCode, name, phone: ncPhoneV, address: ncAddrV, facebook: ncFbV, group: $('ncGroup').value };
   }
   $('app').classList.add('loading'); $('submit').textContent = 'Đang tạo đơn…';
   run().withSuccessHandler(showResult)
@@ -910,7 +929,7 @@ $('rCopy').onclick = () => {
 };
 $('rNew').onclick = () => {
   $('items').innerHTML = ''; $('note').value = ''; $('paid').value = 0; $('oDisc').value = 0; $('custSearch').value = ''; $('custInfo').innerHTML = '';
-  ['ncPhone','ncAddr','ncCode'].forEach(i => $(i).value = '');
+  ['ncPhone','ncAddr','ncCode','ncFb'].forEach(i => $(i).value = '');
   $('result').style.display = 'none'; $('form').style.display = ''; clearMsg(); recalc(); load();
 };
 
@@ -1212,11 +1231,16 @@ function customerForm(c) {
   const isNew = !c;
   openForm(isNew ? 'Thêm khách hàng' : 'Sửa khách ' + c.code, [
     { k: 'code', label: isNew ? 'Mã KH (tự đặt — để trống = tự tạo)' : 'Mã KH (không sửa được)', ph: 'vd: ngocmaihn', ro: isNew ? 0 : 1 },
-    { k: 'name', label: 'Tên khách *' }, { k: 'phone', label: 'SĐT / Zalo', num: 1 },
-    { k: 'group', label: 'Nhóm khách', opts: GROUPS }, { k: 'address', label: 'Địa chỉ' },
-    { k: 'facebook', label: 'Link Facebook', full: 1 },
+    { k: 'name', label: 'Tên khách *' }, { k: 'phone', label: 'SĐT / Zalo *', num: 1 },
+    { k: 'group', label: 'Nhóm khách', opts: GROUPS }, { k: 'address', label: 'Địa chỉ *' },
+    { k: 'facebook', label: 'Link Facebook *', full: 1 },
   ], c || { group: 'Khách lẻ' }, o => {
     if (!o.name) return alert('Nhập tên khách.');
+    if (!(o.phone || '').trim()) return alert('Nhập SĐT / Zalo.');
+    if (!(o.address || '').trim()) return alert('Nhập địa chỉ.');
+    if (!(o.facebook || '').trim()) return alert('Nhập Link Facebook.');
+    const dupP = custByPhone(o.phone);
+    if (dupP && (!c || dupP.code !== c.code)) return alert('⚠ SĐT này đã có ở khách ' + dupP.code + ' — ' + dupP.name + '.');
     if (!isNew) o.code = c.code;
     else {
       const typed = (o.code || '').trim();
