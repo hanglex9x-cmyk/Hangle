@@ -584,7 +584,7 @@ function run() {
 // giao diện nhân viên: link …/exec?nv=1 hoặc nhanvien.html (quyền thật do mã PIN quyết định ở server)
 const STAFF = true || /[?&]nv=1\b/.test(location.search);
 const LS = STAFF ? 'nv_' : '';
-if (STAFF) { document.body.classList.add('staff'); $('pinHint').textContent = 'Nhập mã PIN nhân viên (hỏi chủ shop).'; }
+if (STAFF) { $('pinHint').textContent = 'Nhập mã PIN nhân viên (hỏi chủ shop).'; } // [22/10/2026] NV mo het quyen: khong an muc qlOnly nua
 let PIN = '';
 try { PIN = localStorage.getItem(LS + 'pin') || ''; } catch (e) { /* trình duyệt chặn lưu */ }
 function askPin(text) {
@@ -974,7 +974,7 @@ function showView(v) {
   if (v === 'new') renderPos();
   document.body.classList.toggle('wide', v === 'new' || v === 'list');
   if (v === 'cust') renderCusts();
-  if (v === 'kho') { if (!STAFF) initKho(); renderTon(); }
+  if (v === 'kho') { initKho(); renderTon(); }
   if (v === 'report') initReport();
   if (v === 'web') loadWeb();
   if (v === 'dash') loadDash();
