@@ -314,6 +314,7 @@
   .sumr .big2 b{font-size:21px;color:var(--accent)}
   #submit.full{width:100%;margin-top:12px;padding:13px;font-size:15px}
   @media (max-width:1000px){.pos2{grid-template-columns:1fr}.cart{position:static}}
+svg.ic{width:16px;height:16px;vertical-align:-3px}svg.icc{width:12px;height:12px;vertical-align:-1.5px}
 </style>
 </head>
 <body>
@@ -500,7 +501,7 @@
         <datalist id="sizeList"></datalist>
       </div>
       <aside class="cart">
-        <div id="editBar" style="display:none;border:1.5px solid var(--warn);border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:13.5px">✏️ Đang sửa đơn <b id="editCode"></b><br><button type="button" class="btn-ghost" id="editCancel" style="padding:4px 10px;font-size:13px;margin-top:4px">✖ Huỷ sửa — quay lại tạo đơn mới</button></div>
+        <div id="editBar" style="display:none;border:1.5px solid var(--warn);border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:13.5px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg> Đang sửa đơn <b id="editCode"></b><br><button type="button" class="btn-ghost" id="editCancel" style="padding:4px 10px;font-size:13px;margin-top:4px">✖ Huỷ sửa — quay lại tạo đơn mới</button></div>
         <h2>Giỏ hàng</h2>
         <div id="items"></div>
         <button type="button" class="linkbtn" id="addItem">+ Gõ tay sản phẩm</button>
@@ -560,6 +561,8 @@ const $ = id => document.getElementById(id);
 const money = n => (Math.round(+n || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const num = s => +String(s).replace(/[^\d-]/g, '') || 0;
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// [22/10/2026] Bo icon SVG dong bo kieu moi (Lucide) - may nao cung hien giong het, thay emoji moi may mot kieu
+const ICO = { eye: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>', pen: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>', trash: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>', save: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>', clock: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', clockSm: '<svg class="icc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' };
 
 // Chạy trong Apps Script → dùng google.script.run. Chạy ở GitHub Pages → gọi API (doPost) của web app.
 const API_URL = 'https://script.google.com/macros/s/AKfycbwCYciJNmhKL-8ppfcZ8STvZZVGOrk4OryDcraUJ4ov0oOV3VsZDD97alXlEZ4zxgbuHw/exec';
@@ -895,7 +898,7 @@ $('submit').onclick = () => {
     .withFailureHandler(e => { showMsg('Không tạo được đơn: ' + e.message); done(); })
     .createOrder(payload, PIN);
 };
-function done() { $('app').classList.remove('loading'); $('submit').innerHTML = EDIT_CODE ? '💾 Lưu đơn sửa' : 'Tạo đơn'; }
+function done() { $('app').classList.remove('loading'); $('submit').innerHTML = EDIT_CODE ? ICO.save + ' Lưu đơn sửa' : 'Tạo đơn'; }
 
 $('reprint').onclick = () => {
   const code = prompt('Nhập mã đơn cần xuất lại PDF (vd: DH001):');
@@ -1079,10 +1082,10 @@ function renderStock() {
         <span class="price">${money(p.price)} đ</span>
         <div class="chips">${colors.map(c => `<span class="chip">${esc(c)}</span>`).join('')}${sizes.map(z => `<span class="chip">${esc(z)}</span>`).join('')}</div>
         <span class="meta">Tồn <b style="color:${p.stock < 0 ? 'var(--bad)' : 'var(--fg)'}">${p.stock}</b> sp · <span class="tag ${tag[0]}">${tag[1]}</span></span>
-        <div class="acts"><button type="button" class="btn-ghost pView" data-code="${esc(p.code)}" title="Xem chi tiết">👁</button>
+        <div class="acts"><button type="button" class="btn-ghost pView" data-code="${esc(p.code)}" title="Xem chi tiết">${ICO.eye}</button>
           <button type="button" class="btn-ghost imgbtn qlOnly" data-code="${esc(p.code)}">${firstImg(p) ? '+ Thêm ảnh' : '+ Ảnh'}</button>
-          <button type="button" class="btn-ghost pEdit" data-code="${esc(p.code)}" title="Sửa">✏️</button>
-          <button type="button" class="btn-red pDel qlOnly" data-code="${esc(p.code)}" title="Xoá">🗑</button></div></div></div>`;
+          <button type="button" class="btn-ghost pEdit" data-code="${esc(p.code)}" title="Sửa">${ICO.pen}</button>
+          <button type="button" class="btn-red pDel qlOnly" data-code="${esc(p.code)}" title="Xoá">${ICO.trash}</button></div></div></div>`;
   }).join('') + '</div>' : '<p style="color:var(--muted)">Không tìm thấy sản phẩm.</p>';
   document.querySelectorAll('.pView').forEach(b => b.onclick = () => viewProduct(b.dataset.code));
   document.querySelectorAll('.imgbtn').forEach(b => b.onclick = () => { imgFor = b.dataset.code; $('imgFile').value = ''; $('imgFile').click(); });
@@ -1235,9 +1238,9 @@ function renderCusts() {
   $('custRows').innerHTML = list.length ? list.map(c => `
     <div class="crow"><div class="who"><b>${esc(c.code)}</b> — ${esc(c.name)}<br>
       <span>${esc(c.phone) || 'chưa có SĐT'} • ${esc(c.group)} • mua ${esc(c.total || '0')}đ${num(c.debt) > 0 ? ` • <b class="debt">nợ ${esc(c.debt)}đ</b>` : ''}</span></div>
-      <div class="rowbtns"><button type="button" class="btn-ghost cView" data-code="${esc(c.code)}" title="Xem">👁</button>
-        <button type="button" class="btn-ghost cEdit" data-code="${esc(c.code)}" title="Sửa">✏️</button>
-        <button type="button" class="btn-red cDel qlOnly" data-code="${esc(c.code)}" title="Xoá">🗑</button></div></div>`).join('')
+      <div class="rowbtns"><button type="button" class="btn-ghost cView" data-code="${esc(c.code)}" title="Xem">${ICO.eye}</button>
+        <button type="button" class="btn-ghost cEdit" data-code="${esc(c.code)}" title="Sửa">${ICO.pen}</button>
+        <button type="button" class="btn-red cDel qlOnly" data-code="${esc(c.code)}" title="Xoá">${ICO.trash}</button></div></div>`).join('')
     : '<p style="color:var(--muted)">Không tìm thấy khách.</p>';
   const byCode = code => D.customers.find(c => c.code === code);
   document.querySelectorAll('.cView').forEach(b => b.onclick = () => { $('cQ').value = b.dataset.code; loadCustomer(); });
@@ -1381,7 +1384,7 @@ function renderOrders() {
           <td><div class="its">${o.items.map(itemCell).join('')}</div></td><td class="n">${o.qty}</td>
           <td class="n">${money(o.total)}</td><td class="n">${money(o.paid)}</td><td class="n" style="color:${o.debt > 0 ? 'var(--bad)' : 'inherit'}">${money(o.debt)}</td>
           <td><span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span><br><select class="stSel" data-code="${esc(o.code)}" aria-label="Đổi trạng thái">${opts(o)}</select></td>
-          <td style="white-space:nowrap"><button type="button" class="btn-ghost oView" data-code="${esc(o.code)}" title="Xem chi tiết đơn" style="padding:4px 8px">👁</button> <button type="button" class="btn-ghost oEdit" data-code="${esc(o.code)}" title="Sửa đơn" style="padding:4px 8px">✏️</button> <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}" style="padding:4px 10px;font-size:13px">PDF</button> <button type="button" class="btn-ghost oDel" data-code="${esc(o.code)}" title="Xoá đơn" style="padding:4px 8px">🗑</button></td></tr>`).join('')}
+          <td style="white-space:nowrap"><button type="button" class="btn-ghost oView" data-code="${esc(o.code)}" title="Xem chi tiết đơn" style="padding:4px 8px">${ICO.eye}</button> <button type="button" class="btn-ghost oEdit" data-code="${esc(o.code)}" title="Sửa đơn" style="padding:4px 8px">${ICO.pen}</button> <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}" style="padding:4px 10px;font-size:13px">PDF</button> <button type="button" class="btn-ghost oDel" data-code="${esc(o.code)}" title="Xoá đơn" style="padding:4px 8px">${ICO.trash}</button></td></tr>`).join('')}
         </tbody></table></div>`
         : '<p style="color:var(--muted)">Không có đơn nào' + (hiddenDone ? ' chưa giao' : '') + ' phù hợp.</p>');
     bindPdf('#orderList', 'listView');
@@ -1419,7 +1422,7 @@ function startEditOrder(code) {
       $('paid').value = d.paid || 0; $('oDisc').value = d.discount || 0;
       d.lines.forEach(l => { const div = addItem({ code: l.code, color: l.color, size: l.size, qty: l.qty }); div.dataset.price = l.price; fillVariants(div); });
       recalc(); showCust();
-      $('editCode').textContent = d.code; $('editBar').style.display = 'block'; $('submit').innerHTML = '💾 Lưu đơn sửa';
+      $('editCode').textContent = d.code; $('editBar').style.display = 'block'; $('submit').innerHTML = ICO.save + ' Lưu đơn sửa';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     })
     .withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Không mở được đơn để sửa: ' + e.message); })
@@ -1442,7 +1445,7 @@ function viewOrder(code) {
         ${d.lines.map(l => `<tr><td>${esc(l.code)} — ${esc(l.name || '')}</td><td>${esc(l.color)} ${esc(l.size)}</td><td class="n">${l.qty}</td><td class="n">${money(l.price)}</td><td class="n">${money(l.amount)}</td></tr>`).join('')}
         </table></div>
         <p style="font-size:14px">Giảm giá: ${money(d.discount)}đ · <b>Tổng: ${money(d.total)}đ</b> · Đã thu: ${money(d.paid)}đ · <b>Còn nợ: ${money(d.remain)}đ</b></p>
-        <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Đóng</button><button type="button" class="btn-teal" id="vEdit">✏️ Sửa đơn</button></div>`);
+        <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Đóng</button><button type="button" class="btn-teal" id="vEdit">${ICO.pen} Sửa đơn</button></div>`);
       $('vEdit').onclick = () => { closeV(); startEditOrder(d.code); };
     })
     .withFailureHandler(e => showMsg('Không xem được đơn: ' + e.message))
@@ -1450,12 +1453,12 @@ function viewOrder(code) {
 }
 const isoDay = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 function deadlineChip(o) {
-  if (o.status === 'Đã giao' || o.status === 'Đã hủy') return `<br><span style="font-size:11.5px;color:var(--muted)">⏰ ${esc(o.deadline)}</span>`;
+  if (o.status === 'Đã giao' || o.status === 'Đã hủy') return `<br><span style="font-size:11.5px;color:var(--muted)">${ICO.clockSm} ${esc(o.deadline)}</span>`;
   const t = isoDay(), tm = isoDay(new Date(Date.now() + 86400000));
-  if (o.deadlineDay < t) return `<br><span style="font-size:11.5px;color:var(--bad);font-weight:600">⏰ ${esc(o.deadline)} — QUÁ HẠN</span>`;
-  if (o.deadlineDay === t) return `<br><span style="font-size:11.5px;color:var(--warn);font-weight:600">⏰ Hạn giao HÔM NAY</span>`;
-  if (o.deadlineDay === tm) return `<br><span style="font-size:11.5px;color:var(--warn)">⏰ Hạn giao ngày mai</span>`;
-  return `<br><span style="font-size:11.5px;color:var(--muted)">⏰ ${esc(o.deadline)}</span>`;
+  if (o.deadlineDay < t) return `<br><span style="font-size:11.5px;color:var(--bad);font-weight:600">${ICO.clockSm} ${esc(o.deadline)} — QUÁ HẠN</span>`;
+  if (o.deadlineDay === t) return `<br><span style="font-size:11.5px;color:var(--warn);font-weight:600">${ICO.clockSm} Hạn giao HÔM NAY</span>`;
+  if (o.deadlineDay === tm) return `<br><span style="font-size:11.5px;color:var(--warn)">${ICO.clockSm} Hạn giao ngày mai</span>`;
+  return `<br><span style="font-size:11.5px;color:var(--muted)">${ICO.clockSm} ${esc(o.deadline)}</span>`;
 }
 
 /* ---------------- kho: nhập hàng + xuất – nhập – tồn ---------------- */
@@ -1564,10 +1567,10 @@ function renderDash(d) {
     ${(() => { const a = d.dueAlerts || { overdue: [], today: [], soon: [] }; const tot = a.overdue.length + a.today.length + a.soon.length; if (!tot) return '';
       const row = (x, label, bad) => `<div style="font-size:13.5px;margin-bottom:5px"><b${bad ? ' class="neg"' : ''}>${label}</b> · <b>${esc(x.code)}</b> — ${esc(x.custName)} · hạn ${esc(x.deadline)} · ${money(x.value)}đ</div>`;
       const days = x => Math.round((new Date(isoDay()) - new Date(x.deadlineDay)) / 86400000);
-      return `<section><h2>⏰ Nhắc hẹn giao (${tot})</h2>`
-        + a.overdue.map(x => row(x, '🔴 QUÁ HẠN ' + days(x) + ' ngày', 1)).join('')
-        + a.today.map(x => row(x, '🟠 Hạn giao HÔM NAY', 0)).join('')
-        + a.soon.map(x => row(x, '🟡 Hạn giao ngày mai', 0)).join('') + '</section>'; })()}
+      return `<section><h2>${ICO.clock} Nhắc hẹn giao (${tot})</h2>`
+        + a.overdue.map(x => row(x, '<span style="color:#d92d20">●</span> QUÁ HẠN ' + days(x) + ' ngày', 1)).join('')
+        + a.today.map(x => row(x, '<span style="color:#ef6820">●</span> Hạn giao HÔM NAY', 0)).join('')
+        + a.soon.map(x => row(x, '<span style="color:#e6a700">●</span> Hạn giao ngày mai', 0)).join('') + '</section>'; })()}
     <section>
       <h2>Tháng ${esc(d.monthLabel)}</h2>
       <div class="kpis">
@@ -1633,8 +1636,8 @@ function loadRates() {
     $('tgNowDate').textContent = now ? 'ngày ' + now.date : '';
     $('tgList').innerHTML = list.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th>Ngày</th><th class="n">Tỷ giá</th><th>Ghi chú</th><th></th></tr></thead>
       <tbody>${list.map(r => `<tr><td>${esc(r.date)}</td><td class="n"><b>${money(r.rate)}</b></td><td>${esc(r.note)}</td>
-        <td class="n"><span class="rowbtns" style="justify-content:flex-end"><button type="button" class="btn-ghost tgEdit" data-day="${r.day}" data-rate="${r.rate}" data-note="${esc(r.note)}" title="Sửa">✏️</button>
-        <button type="button" class="btn-red tgDel" data-day="${r.day}" data-date="${esc(r.date)}" title="Xoá">🗑</button></span></td></tr>`).join('')}</tbody></table></div>`
+        <td class="n"><span class="rowbtns" style="justify-content:flex-end"><button type="button" class="btn-ghost tgEdit" data-day="${r.day}" data-rate="${r.rate}" data-note="${esc(r.note)}" title="Sửa">${ICO.pen}</button>
+        <button type="button" class="btn-red tgDel" data-day="${r.day}" data-date="${esc(r.date)}" title="Xoá">${ICO.trash}</button></span></td></tr>`).join('')}</tbody></table></div>`
       : '<p style="color:var(--muted)">Chưa có tỷ giá nào.</p>';
     document.querySelectorAll('.tgEdit').forEach(b => b.onclick = () => {
       tgOldDay = b.dataset.day; $('tgDay').value = b.dataset.day; $('tgRate').value = b.dataset.rate; $('tgNote').value = b.dataset.note;
