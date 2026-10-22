@@ -500,6 +500,7 @@
         <datalist id="sizeList"></datalist>
       </div>
       <aside class="cart">
+        <div id="editBar" style="display:none;border:1.5px solid var(--warn);border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:13.5px">✏️ Đang sửa đơn <b id="editCode"></b><br><button type="button" class="btn-ghost" id="editCancel" style="padding:4px 10px;font-size:13px;margin-top:4px">✖ Huỷ sửa — quay lại tạo đơn mới</button></div>
         <h2>Giỏ hàng</h2>
         <div id="items"></div>
         <button type="button" class="linkbtn" id="addItem">+ Gõ tay sản phẩm</button>
@@ -518,6 +519,7 @@
             <select id="ncGroup"><option>Khách lẻ</option><option>Khách sỉ</option><option>Cộng tác viên</option></select></div>
           <div><label>Ngày</label><input type="date" id="date"></div>
         </div>
+        <div><label>Hạn giao (hẹn ngày giao cho khách)</label><input type="date" id="oDeadline"></div>
         <div class="g2">
           <div><label>Giảm giá (đ)</label><input id="oDisc" inputmode="numeric" value="0"></div>
           <div><label>Khách đã trả/cọc (đ)</label><input id="paid" inputmode="numeric" value="0"></div>
@@ -705,11 +707,12 @@ function addItem(pre) {
   div.innerHTML = `<div class="ln"><span class="pic"></span><span class="sum">Sản phẩm gõ tay</span>
       <input class="qty" inputmode="numeric" value="${pre ? pre.qty : 1}" title="Số lượng"><span class="amt"></span>
       <button type="button" class="btn-x" title="Xóa">✕</button></div>
-    <div class="ed"><input class="code" list="prodListPos" placeholder="Mã / tên sản phẩm"><input class="color" list="colorList" placeholder="Màu"><input class="size" list="sizeList" placeholder="Size"></div>
+    <div class="ed"><input class="code" list="prodListPos" placeholder="Mã / tên sản phẩm"><input class="color" list="colorList" placeholder="Màu"><input class="size" list="sizeList" placeholder="Size"><input class="price" inputmode="numeric" placeholder="Đơn giá" style="display:none"></div>
     <div class="meta"></div>`;
   if (pre) { div.querySelector('.code').value = pre.code; div.querySelector('.color').value = pre.color; div.querySelector('.size').value = pre.size; }
   div.querySelector('.btn-x').onclick = () => { div.remove(); recalc(); };
   div.querySelectorAll('input').forEach(i => i.addEventListener('input', () => { fillVariants(div); recalc(); }));
+  div.querySelector('.code').addEventListener('input', () => { delete div.dataset.price; });
   $('items').appendChild(div);
   fillVariants(div); recalc();
   if (!pre) div.querySelector('.code').focus();
@@ -806,13 +809,20 @@ function fillVariants(div) {
   const meta = div.querySelector('.meta'), sum = div.querySelector('.sum');
   const color = div.querySelector('.color').value.trim(), size = div.querySelector('.size').value.trim();
   const qty = num(div.querySelector('.qty').value);
+  const priceIn = div.querySelector('.price');
+  // [22/10/2026] Đơn giá hiệu lực của dòng: giá tĩnh mang theo khi SỬA đơn > giá catalog > giá gõ tay
+  const unit = div.dataset.price ? num(div.dataset.price) : (p ? p.price : num(priceIn.value));
   div.querySelector('.pic').innerHTML = p ? thumb(firstImg(p), 'sm') : '';
   if (!p) {
-    sum.textContent = 'Sản phẩm gõ tay'; div.querySelector('.amt').textContent = '';
-    meta.textContent = code ? '⚠ Mã hàng chưa có trong MA_SP' : ''; return;
+    priceIn.style.display = code ? '' : 'none';
+    sum.innerHTML = code ? `<b>${esc(code)}</b> · gõ tay` : 'Sản phẩm gõ tay';
+    div.querySelector('.amt').textContent = unit > 0 ? money(unit * qty) + ' đ' : '';
+    meta.innerHTML = code ? (unit > 0 ? '<span class="stock-low">SP chưa có trong MA_SP — bán theo mã + giá gõ tay (đơn ORDER)</span>'
+      : '⚠ Mã hàng chưa có trong MA_SP — nhập thêm Đơn giá để bán mã này') : ''; return;
   }
+  priceIn.style.display = 'none';
   sum.innerHTML = `<b>${esc(p.code)}</b>${color ? ' · ' + esc(color) : ''}${size ? ' · ' + esc(size) : ''}<br><span style="font-size:12px;color:var(--muted)">${esc(p.name)}</span>`;
-  div.querySelector('.amt').textContent = money(p.price * qty) + ' đ';
+  div.querySelector('.amt').textContent = money(unit * qty) + ' đ';
   const here = D.stock.find(s => s.code.toLowerCase() === code.toLowerCase() && s.color.toLowerCase() === color.toLowerCase() && s.size.toLowerCase() === size.toLowerCase());
   const have = here ? here.qty : 0;
   meta.innerHTML = (color || size) ? (have >= qty ? `<span class="stock-ok">Tồn ${have} → hàng có sẵn</span>`
@@ -831,17 +841,14 @@ function readItems() {
       // Máy chủ hiện tại bỏ qua trường lạ này nên gửi kèm là AN TOÀN; khi máy chủ được vá để ghi
       // giá này thành GIÁ TRỊ TĨNH vào DON_HANG cột K (thay công thức tra MA_SP!J), đơn sẽ khóa giá.
       // Chi tiết phần máy chủ/Sheet: xem agent-review/BAO_CAO.md mục 2 — client một mình KHÔNG khóa được giá.
-      price: p ? p.price : 0,
+      price: d.dataset.price ? num(d.dataset.price) : (p ? p.price : num((d.querySelector('.price') || {}).value)),
     };
   }).filter(i => i.code);
 }
 
 function recalc() {
   if (!D) return;
-  const sub = readItems().reduce((s, i) => {
-    const p = D.products.find(x => x.code.toLowerCase() === i.code.toLowerCase());
-    return s + (p ? p.price * i.qty : 0);
-  }, 0);
+  const sub = readItems().reduce((s, i) => s + i.price * i.qty, 0);
   const disc = num($('oDisc').value), total = sub - disc, paid = num($('paid').value);
   $('tSub').textContent = money(sub) + ' đ'; $('tDisc').textContent = '– ' + money(disc) + ' đ';
   $('tTotal').textContent = money(total) + ' đ'; $('tPaid').textContent = money(paid) + ' đ'; $('tRemain').textContent = money(total - paid) + ' đ';
@@ -853,12 +860,21 @@ $('submit').onclick = () => {
   clearMsg();
   const items = readItems();
   if (!items.length) return showMsg('Chưa có sản phẩm nào.');
-  const bad = items.find(i => !D.products.some(p => p.code.toLowerCase() === i.code.toLowerCase()));
-  if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong MA_SP.');
+  const bad = items.find(i => !D.products.some(p => p.code.toLowerCase() === i.code.toLowerCase()) && !(i.price > 0));
+  if (bad) return showMsg('Mã hàng ' + bad.code + ' chưa có trong MA_SP và chưa nhập Đơn giá — dòng gõ tay phải tự nhập đơn giá.');
   if (items.some(i => i.qty <= 0)) return showMsg('Số lượng phải lớn hơn 0.');
   items[0].discount = num($('oDisc').value);   // giảm giá cả đơn ghi vào dòng đầu
-  const payload = { date: $('date').value, items, paid: num($('paid').value), note: $('note').value };
+  const payload = { date: $('date').value, items, paid: num($('paid').value), note: $('note').value, deadline: $('oDeadline').value };
   const c = showCust();
+  if (EDIT_CODE) {
+    if (!c) return showMsg('Sửa đơn: hãy chọn khách cũ từ gợi ý (muốn khách mới thì tạo đơn mới).');
+    payload.customerCode = c.code; payload.orderCode = EDIT_CODE;
+    $('app').classList.add('loading'); $('submit').textContent = 'Đang lưu đơn sửa…';
+    run().withSuccessHandler(onEditSaved)
+      .withFailureHandler(e => { showMsg('Không sửa được đơn: ' + e.message); done(); })
+      .updateOrder(payload, PIN);
+    return;
+  }
   if (c) payload.customerCode = c.code;
   else {
     const name = $('custSearch').value.trim();
@@ -879,7 +895,7 @@ $('submit').onclick = () => {
     .withFailureHandler(e => { showMsg('Không tạo được đơn: ' + e.message); done(); })
     .createOrder(payload, PIN);
 };
-function done() { $('app').classList.remove('loading'); $('submit').innerHTML = 'Tạo đơn'; }
+function done() { $('app').classList.remove('loading'); $('submit').innerHTML = EDIT_CODE ? '💾 Lưu đơn sửa' : 'Tạo đơn'; }
 
 $('reprint').onclick = () => {
   const code = prompt('Nhập mã đơn cần xuất lại PDF (vd: DH001):');
@@ -927,10 +943,15 @@ $('rCopy').onclick = () => {
     () => showMsg('Đã copy tin nhắn – dán vào Zalo/Messenger để gửi khách.', true),
     () => { document.execCommand('copy'); showMsg('Đã copy tin nhắn.', true); });
 };
-$('rNew').onclick = () => {
+function resetOrderForm() {
   $('items').innerHTML = ''; $('note').value = ''; $('paid').value = 0; $('oDisc').value = 0; $('custSearch').value = ''; $('custInfo').innerHTML = '';
+  delete $('custSearch').dataset.code;
   ['ncPhone','ncAddr','ncCode','ncFb'].forEach(i => $(i).value = '');
-  $('result').style.display = 'none'; $('form').style.display = ''; clearMsg(); recalc(); load();
+  $('oDeadline').value = ''; recalc();
+}
+$('rNew').onclick = () => {
+  if (EDIT_CODE) exitEditMode(); else resetOrderForm();
+  $('result').style.display = 'none'; $('form').style.display = ''; clearMsg(); load();
 };
 
 /* ---------------- xem đơn theo ngày ---------------- */
@@ -1058,10 +1079,10 @@ function renderStock() {
         <span class="price">${money(p.price)} đ</span>
         <div class="chips">${colors.map(c => `<span class="chip">${esc(c)}</span>`).join('')}${sizes.map(z => `<span class="chip">${esc(z)}</span>`).join('')}</div>
         <span class="meta">Tồn <b style="color:${p.stock < 0 ? 'var(--bad)' : 'var(--fg)'}">${p.stock}</b> sp · <span class="tag ${tag[0]}">${tag[1]}</span></span>
-        <div class="acts"><button type="button" class="btn-ghost pView" data-code="${esc(p.code)}">Chi tiết</button>
+        <div class="acts"><button type="button" class="btn-ghost pView" data-code="${esc(p.code)}" title="Xem chi tiết">👁</button>
           <button type="button" class="btn-ghost imgbtn qlOnly" data-code="${esc(p.code)}">${firstImg(p) ? '+ Thêm ảnh' : '+ Ảnh'}</button>
-          <button type="button" class="btn-ghost pEdit" data-code="${esc(p.code)}">Sửa</button>
-          <button type="button" class="btn-red pDel qlOnly" data-code="${esc(p.code)}">Xóa</button></div></div></div>`;
+          <button type="button" class="btn-ghost pEdit" data-code="${esc(p.code)}" title="Sửa">✏️</button>
+          <button type="button" class="btn-red pDel qlOnly" data-code="${esc(p.code)}" title="Xoá">🗑</button></div></div></div>`;
   }).join('') + '</div>' : '<p style="color:var(--muted)">Không tìm thấy sản phẩm.</p>';
   document.querySelectorAll('.pView').forEach(b => b.onclick = () => viewProduct(b.dataset.code));
   document.querySelectorAll('.imgbtn').forEach(b => b.onclick = () => { imgFor = b.dataset.code; $('imgFile').value = ''; $('imgFile').click(); });
@@ -1214,9 +1235,9 @@ function renderCusts() {
   $('custRows').innerHTML = list.length ? list.map(c => `
     <div class="crow"><div class="who"><b>${esc(c.code)}</b> — ${esc(c.name)}<br>
       <span>${esc(c.phone) || 'chưa có SĐT'} • ${esc(c.group)} • mua ${esc(c.total || '0')}đ${num(c.debt) > 0 ? ` • <b class="debt">nợ ${esc(c.debt)}đ</b>` : ''}</span></div>
-      <div class="rowbtns"><button type="button" class="btn-ghost cView" data-code="${esc(c.code)}">Xem</button>
-        <button type="button" class="btn-ghost cEdit" data-code="${esc(c.code)}">Sửa</button>
-        <button type="button" class="btn-red cDel qlOnly" data-code="${esc(c.code)}">Xóa</button></div></div>`).join('')
+      <div class="rowbtns"><button type="button" class="btn-ghost cView" data-code="${esc(c.code)}" title="Xem">👁</button>
+        <button type="button" class="btn-ghost cEdit" data-code="${esc(c.code)}" title="Sửa">✏️</button>
+        <button type="button" class="btn-red cDel qlOnly" data-code="${esc(c.code)}" title="Xoá">🗑</button></div></div>`).join('')
     : '<p style="color:var(--muted)">Không tìm thấy khách.</p>';
   const byCode = code => D.customers.find(c => c.code === code);
   document.querySelectorAll('.cView').forEach(b => b.onclick = () => { $('cQ').value = b.dataset.code; loadCustomer(); });
@@ -1356,14 +1377,20 @@ function renderOrders() {
     $('orderList').innerHTML = (hiddenDone ? `<p style="font-size:12px;color:var(--muted)">Đang ẩn ${hiddenDone} đơn đã giao – tick "Hiện cả đơn đã giao" để xem.</p>` : '')
       + (shown.length ? `<div class="tblwrap"><table class="xnt ordtbl"><thead><tr><th>Mã</th><th>Ngày</th><th>Khách</th><th>Sản phẩm</th>
           <th class="n">SL</th><th class="n">Tổng</th><th class="n">Đã thu</th><th class="n">Còn nợ</th><th>Trạng thái</th><th></th></tr></thead><tbody>
-        ${shown.map(o => `<tr><td><b>${esc(o.code)}</b></td><td>${esc(o.date)}</td><td>${esc(o.custName || o.custCode)}<br><span style="font-size:12px;color:var(--muted)">${esc(o.custCode)}</span></td>
+        ${shown.map(o => `<tr><td><b>${esc(o.code)}</b></td><td>${esc(o.date)}${o.deadline ? deadlineChip(o) : ''}</td><td>${esc(o.custName || o.custCode)}<br><span style="font-size:12px;color:var(--muted)">${esc(o.custCode)}</span></td>
           <td><div class="its">${o.items.map(itemCell).join('')}</div></td><td class="n">${o.qty}</td>
           <td class="n">${money(o.total)}</td><td class="n">${money(o.paid)}</td><td class="n" style="color:${o.debt > 0 ? 'var(--bad)' : 'inherit'}">${money(o.debt)}</td>
           <td><span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span><br><select class="stSel" data-code="${esc(o.code)}" aria-label="Đổi trạng thái">${opts(o)}</select></td>
-          <td><button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}" style="padding:4px 10px;font-size:13px">PDF</button></td></tr>`).join('')}
+          <td style="white-space:nowrap"><button type="button" class="btn-ghost oView" data-code="${esc(o.code)}" title="Xem chi tiết đơn" style="padding:4px 8px">👁</button> <button type="button" class="btn-ghost oEdit" data-code="${esc(o.code)}" title="Sửa đơn" style="padding:4px 8px">✏️</button> <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}" style="padding:4px 10px;font-size:13px">PDF</button> <button type="button" class="btn-ghost oDel" data-code="${esc(o.code)}" title="Xoá đơn" style="padding:4px 8px">🗑</button></td></tr>`).join('')}
         </tbody></table></div>`
         : '<p style="color:var(--muted)">Không có đơn nào' + (hiddenDone ? ' chưa giao' : '') + ' phù hợp.</p>');
     bindPdf('#orderList', 'listView');
+    document.querySelectorAll('#orderList .oView').forEach(b => b.onclick = () => viewOrder(b.dataset.code));
+    document.querySelectorAll('#orderList .oEdit').forEach(b => b.onclick = () => startEditOrder(b.dataset.code));
+    document.querySelectorAll('#orderList .oDel').forEach(b => b.onclick = () => {
+      if (confirm('XOÁ HẲN đơn ' + b.dataset.code + '?\nĐơn sẽ biến mất khỏi danh sách và Sheet. (Khác với Hủy: hủy vẫn giữ lại lịch sử đơn.)'))
+        act('deleteOrder', [b.dataset.code], 'Đã xoá đơn ' + b.dataset.code + '.', loadOrders);
+    });
     const ask = { giao: 'Đánh dấu đơn %s ĐÃ GIAO (ghi ngày giao hôm nay, dòng đơn sẽ tự ẩn trong Sheet)?',
       huy: 'HỦY đơn %s? (hàng được cộng lại vào kho)', mo: 'Mở lại đơn %s (xóa ngày giao / hủy)?' };
     document.querySelectorAll('#orderList .stSel').forEach(sel => sel.onchange = () => {
@@ -1371,6 +1398,64 @@ function renderOrders() {
       if (confirm(ask[a].replace('%s', sel.dataset.code)))
         act('setOrderStatus', [sel.dataset.code, a], 'Đã cập nhật đơn ' + sel.dataset.code + '.', loadOrders);
     });
+}
+
+/* ---------------- [22/10/2026] xem / sửa / xoá đơn + hạn giao ---------------- */
+let EDIT_CODE = '';
+function exitEditMode() {
+  EDIT_CODE = ''; $('editBar').style.display = 'none'; $('submit').innerHTML = 'Tạo đơn'; resetOrderForm();
+}
+function startEditOrder(code) {
+  clearMsg();
+  $('app').classList.add('loading');
+  run().withSuccessHandler(d => {
+      $('app').classList.remove('loading');
+      showView('new'); resetOrderForm();
+      EDIT_CODE = d.code;
+      const cust = D.customers.find(x => x.code === d.customer.code) || d.customer;
+      $('custSearch').value = d.customer.name || ''; $('custSearch').dataset.code = d.customer.code;
+      $('ncPhone').value = cust.phone || ''; $('ncAddr').value = cust.address || ''; $('ncFb').value = cust.facebook || '';
+      $('date').value = d.dateISO || ''; $('oDeadline').value = d.deadlineISO || '';
+      $('paid').value = d.paid || 0; $('oDisc').value = d.discount || 0;
+      d.lines.forEach(l => { const div = addItem({ code: l.code, color: l.color, size: l.size, qty: l.qty }); div.dataset.price = l.price; fillVariants(div); });
+      recalc(); showCust();
+      $('editCode').textContent = d.code; $('editBar').style.display = 'block'; $('submit').innerHTML = '💾 Lưu đơn sửa';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    })
+    .withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Không mở được đơn để sửa: ' + e.message); })
+    .getOrderDetail(code, PIN);
+}
+function onEditSaved(r) {
+  const code = r.orderCode, total = r.order.total;
+  exitEditMode();
+  showView('list'); loadOrders();
+  showMsg('Đã sửa đơn ' + code + ' — tổng mới ' + money(total) + 'đ.', true);
+}
+function viewOrder(code) {
+  clearMsg();
+  run().withSuccessHandler(d => {
+      const st = d.lines.length ? d.lines[0].status : '';
+      openV(`<h2>Đơn ${esc(d.code)} · ${esc(st)}</h2>
+        <p style="font-size:14px">Khách: <b>${esc(d.customer.name)}</b> (${esc(d.customer.code)}) · ${esc(d.customer.phone || '')}<br>
+        Địa chỉ: ${esc(d.customer.address || '—')}<br>Ngày đặt: ${esc(d.date)}${d.deadline ? ' · <b>Hạn giao: ' + esc(d.deadline) + '</b>' : ''}</p>
+        <div class="tblwrap"><table class="mini"><tr><th>Sản phẩm</th><th>Màu/size</th><th class="n">SL</th><th class="n">Đơn giá</th><th class="n">Tiền</th></tr>
+        ${d.lines.map(l => `<tr><td>${esc(l.code)} — ${esc(l.name || '')}</td><td>${esc(l.color)} ${esc(l.size)}</td><td class="n">${l.qty}</td><td class="n">${money(l.price)}</td><td class="n">${money(l.amount)}</td></tr>`).join('')}
+        </table></div>
+        <p style="font-size:14px">Giảm giá: ${money(d.discount)}đ · <b>Tổng: ${money(d.total)}đ</b> · Đã thu: ${money(d.paid)}đ · <b>Còn nợ: ${money(d.remain)}đ</b></p>
+        <div class="mfoot"><button type="button" class="btn-ghost" onclick="closeV()">Đóng</button><button type="button" class="btn-teal" id="vEdit">✏️ Sửa đơn</button></div>`);
+      $('vEdit').onclick = () => { closeV(); startEditOrder(d.code); };
+    })
+    .withFailureHandler(e => showMsg('Không xem được đơn: ' + e.message))
+    .getOrderDetail(code, PIN);
+}
+const isoDay = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+function deadlineChip(o) {
+  if (o.status === 'Đã giao' || o.status === 'Đã hủy') return `<br><span style="font-size:11.5px;color:var(--muted)">⏰ ${esc(o.deadline)}</span>`;
+  const t = isoDay(), tm = isoDay(new Date(Date.now() + 86400000));
+  if (o.deadlineDay < t) return `<br><span style="font-size:11.5px;color:var(--bad);font-weight:600">⏰ ${esc(o.deadline)} — QUÁ HẠN</span>`;
+  if (o.deadlineDay === t) return `<br><span style="font-size:11.5px;color:var(--warn);font-weight:600">⏰ Hạn giao HÔM NAY</span>`;
+  if (o.deadlineDay === tm) return `<br><span style="font-size:11.5px;color:var(--warn)">⏰ Hạn giao ngày mai</span>`;
+  return `<br><span style="font-size:11.5px;color:var(--muted)">⏰ ${esc(o.deadline)}</span>`;
 }
 
 /* ---------------- kho: nhập hàng + xuất – nhập – tồn ---------------- */
@@ -1476,6 +1561,13 @@ function renderDash(d) {
         ${kpi('Chờ hàng', t.waiting, '', t.waiting > 0)}${kpi('Đang xử lý', t.processing)}${kpi('Đã hủy', t.cancelled)}
       </div>
     </section>
+    ${(() => { const a = d.dueAlerts || { overdue: [], today: [], soon: [] }; const tot = a.overdue.length + a.today.length + a.soon.length; if (!tot) return '';
+      const row = (x, label, bad) => `<div style="font-size:13.5px;margin-bottom:5px"><b${bad ? ' class="neg"' : ''}>${label}</b> · <b>${esc(x.code)}</b> — ${esc(x.custName)} · hạn ${esc(x.deadline)} · ${money(x.value)}đ</div>`;
+      const days = x => Math.round((new Date(isoDay()) - new Date(x.deadlineDay)) / 86400000);
+      return `<section><h2>⏰ Nhắc hẹn giao (${tot})</h2>`
+        + a.overdue.map(x => row(x, '🔴 QUÁ HẠN ' + days(x) + ' ngày', 1)).join('')
+        + a.today.map(x => row(x, '🟠 Hạn giao HÔM NAY', 0)).join('')
+        + a.soon.map(x => row(x, '🟡 Hạn giao ngày mai', 0)).join('') + '</section>'; })()}
     <section>
       <h2>Tháng ${esc(d.monthLabel)}</h2>
       <div class="kpis">
@@ -1541,8 +1633,8 @@ function loadRates() {
     $('tgNowDate').textContent = now ? 'ngày ' + now.date : '';
     $('tgList').innerHTML = list.length ? `<div class="tblwrap"><table class="xnt"><thead><tr><th>Ngày</th><th class="n">Tỷ giá</th><th>Ghi chú</th><th></th></tr></thead>
       <tbody>${list.map(r => `<tr><td>${esc(r.date)}</td><td class="n"><b>${money(r.rate)}</b></td><td>${esc(r.note)}</td>
-        <td class="n"><span class="rowbtns" style="justify-content:flex-end"><button type="button" class="btn-ghost tgEdit" data-day="${r.day}" data-rate="${r.rate}" data-note="${esc(r.note)}">Sửa</button>
-        <button type="button" class="btn-red tgDel" data-day="${r.day}" data-date="${esc(r.date)}">Xóa</button></span></td></tr>`).join('')}</tbody></table></div>`
+        <td class="n"><span class="rowbtns" style="justify-content:flex-end"><button type="button" class="btn-ghost tgEdit" data-day="${r.day}" data-rate="${r.rate}" data-note="${esc(r.note)}" title="Sửa">✏️</button>
+        <button type="button" class="btn-red tgDel" data-day="${r.day}" data-date="${esc(r.date)}" title="Xoá">🗑</button></span></td></tr>`).join('')}</tbody></table></div>`
       : '<p style="color:var(--muted)">Chưa có tỷ giá nào.</p>';
     document.querySelectorAll('.tgEdit').forEach(b => b.onclick = () => {
       tgOldDay = b.dataset.day; $('tgDay').value = b.dataset.day; $('tgRate').value = b.dataset.rate; $('tgNote').value = b.dataset.note;
@@ -1778,6 +1870,7 @@ function renderReport() {
 
 load();
 if (STAFF) showView('list'); else loadDash();
+$('editCancel').onclick = () => exitEditMode();
 </script>
 </body>
 </html>
