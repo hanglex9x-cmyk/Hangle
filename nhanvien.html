@@ -924,7 +924,7 @@ function showResult(r) {
   $('rZalo').href = phone ? 'https://zalo.me/' + phone : 'https://chat.zalo.me/';
   $('rText').value = `Chào ${o.customer.name}, shop gửi bạn đơn hàng ${r.orderCode} (${o.date}):\n`
     + o.lines.map(l => `- ${l.name} ${l.color} ${l.size} x${l.qty}: ${money(l.amount)}đ`).join('\n')
-    + `\nTổng: ${money(o.total)}đ | Đã trả: ${money(o.paid)}đ | Còn lại: ${money(o.remain)}đ`
+    + `\nTổng: ${money(o.total)}đ | Đã trả: ${money(o.paid)}đ | Còn lại: ${money(o.remain)}đ\nHàng order từ 12-18 ngày\nHàng may từ 4 tuần trở lên`
     + (hasPdf ? `\nXem đơn (PDF): ${r.pdfUrl}` : '');
   showMsg(hasPdf ? 'PDF đơn ' + r.orderCode + ' đã lưu vào Google Drive.' : 'Đã tạo đơn ' + r.orderCode + ' (đã ghi vào DON_HANG).', true);
 }
