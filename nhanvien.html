@@ -403,7 +403,7 @@ svg.ic{width:16px;height:16px;vertical-align:-3px}svg.icc{width:12px;height:12px
   <div id="khoView" style="display:none">
     <section>
       <div class="head2"><h2>Tồn kho theo màu / size</h2><span class="rowbtns"><span id="tonSum" style="font-size:13px;color:var(--muted);align-self:center"></span>
-        <button type="button" class="btn-ghost" id="tCsv">⬇ Xuất CSV</button></span></div>
+        <button type="button" class="btn-ghost" id="tCsv">⬇ Xuất CSV</button> <button type="button" class="btn-ghost" id="tXlsx">⬇ Xuất Excel</button> <button type="button" class="btn-teal" id="kNew">+ Tạo phiếu nhập</button></span></div>
       <div class="grid">
         <div style="grid-column:span 2"><label>Tìm mã / tên / màu / size</label><input id="tQ" placeholder="vd: SP03, đen, XL"></div>
         <div><label>Lọc</label><select id="tF"><option value="">Tất cả</option><option value="pos">Còn hàng</option>
@@ -412,7 +412,7 @@ svg.ic{width:16px;height:16px;vertical-align:-3px}svg.icc{width:12px;height:12px
       </div>
     </section>
     <div id="tonBox" style="margin-bottom:14px"></div>
-    <section class="qlOnly">
+    <section class="qlOnly" id="kFormSec">
       <h2>Nhập hàng vào kho</h2>
       <div class="grid">
         <div><label>Ngày về</label><input type="date" id="kDate"></div>
@@ -421,6 +421,7 @@ svg.ic{width:16px;height:16px;vertical-align:-3px}svg.icc{width:12px;height:12px
       <div id="kItems"></div>
       <div class="actions" style="justify-content:space-between;margin-top:10px">
         <button type="button" class="btn-ghost" id="kAddRow">+ Thêm dòng</button>
+        <span class="rowbtns"><button type="button" class="btn-ghost" id="kImp">⬆ Nhập từ Excel</button> <button type="button" class="btn-ghost" id="kTpl">File mẫu</button></span><input type="file" id="kFile" accept=".xlsx,.xls,.csv" style="display:none">
         <button type="button" class="btn-teal" id="kSave">✔ Lưu phiếu nhập</button>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-top:8px">Giá tệ / tỷ giá / ship để trống = lấy theo MA_SP và TY_GIA như trong sheet.</div>
@@ -1495,7 +1496,7 @@ function initKho() {
   if (!$('kItems').children.length) addRecRow();
   if (!$('xFrom').value) xRange('m');
 }
-function addRecRow() {
+function addRecRow(pre) {
   const div = document.createElement('div');
   div.className = 'rec';
   div.innerHTML = `
@@ -1507,6 +1508,13 @@ function addRecRow() {
     <div><button type="button" class="btn-x" title="Xóa dòng">✕</button></div>`;
   div.querySelector('.btn-x').onclick = () => div.remove();
   $('kItems').appendChild(div);
+  if (pre) {
+    div.querySelector('.code').value = pre.code || '';
+    div.querySelector('.color').value = pre.color || '';
+    div.querySelector('.size').value = pre.size || '';
+    div.querySelector('.qty').value = pre.qty || 1;
+    div.querySelector('.cny').value = pre.cny || '';
+  }
 }
 $('kAddRow').onclick = addRecRow;
 $('kSave').onclick = () => {
@@ -1525,6 +1533,62 @@ $('kSave').onclick = () => {
   act('addReceipt', [{ date: $('kDate').value, note: $('kNote').value.trim(), items }],
     r => `Đã nhập kho ${r.rows} dòng (NHAP_HANG từ dòng ${r.start}).`,
     () => { $('kItems').innerHTML = ''; $('kNote').value = ''; addRecRow(); });
+};
+function resetReceiptForm() {
+  if (D) $('kDate').value = D.today;
+  $('kNote').value = ''; $('kItems').innerHTML = ''; addRecRow();
+}
+$('kNew').onclick = () => {
+  resetReceiptForm();
+  $('kFormSec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const first = document.querySelector('#kItems .rec .code');
+  if (first) setTimeout(() => first.focus(), 350);
+};
+$('kTpl').onclick = () => needXlsx().then(() => {
+  const ws = XLSX.utils.aoa_to_sheet([['Mã SP', 'Màu', 'Size', 'Số lượng', 'Giá tệ (tùy chọn)'], ['SP01', 'Đen', 'M', 10, ''], ['SP02', 'Trắng', 'L', 5, 25.5]]);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'PhieuNhap');
+  XLSX.writeFile(wb, 'Mau_phieu_nhap_kho.xlsx');
+}).catch(e => showMsg(e.message));
+$('kImp').onclick = () => $('kFile').click();
+$('kFile').addEventListener('change', () => {
+  const f = $('kFile').files[0]; $('kFile').value = '';
+  if (!f) return;
+  needXlsx().then(() => f.arrayBuffer()).then(buf => {
+    const wb = XLSX.read(buf, { type: 'array' });
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+    const rows = aoa.filter(r => r.some(c => String(c).trim() !== ''));
+    if (!rows.length) return showMsg('File trống.');
+    const head = rows[0].map(c => norm(String(c)));
+    let ix = { code: head.findIndex(h => /ma/.test(h)), color: head.findIndex(h => /mau/.test(h)), size: head.findIndex(h => /size/.test(h)), qty: head.findIndex(h => /luong|^sl/.test(h)), cny: head.findIndex(h => /gia/.test(h)) };
+    let start = 1;
+    if (ix.code < 0) { ix = { code: 0, color: 1, size: 2, qty: 3, cny: 4 }; start = /[a-zA-Z]/.test(String(rows[0][0])) ? 1 : 0; }
+    if (ix.qty < 0) ix.qty = 3;
+    const existing = [...document.querySelectorAll('#kItems .rec')];
+    if (existing.length === 1 && !existing[0].querySelector('.code').value.trim()) existing[0].remove();
+    let added = 0; const bad = [];
+    for (let i = start; i < rows.length; i++) {
+      const r = rows[i];
+      const rawCode = String(r[ix.code] ?? '').trim();
+      if (!rawCode) continue;
+      const code = prodCode(rawCode);
+      if (!findProd(code)) { bad.push(rawCode); continue; }
+      addRecRow({ code, color: ix.color >= 0 ? String(r[ix.color] ?? '').trim() : '', size: ix.size >= 0 ? String(r[ix.size] ?? '').trim() : '', qty: num(r[ix.qty]) || 1, cny: ix.cny >= 0 && r[ix.cny] !== '' && r[ix.cny] != null ? String(r[ix.cny]) : '' });
+      added++;
+    }
+    if (!added && !bad.length) return showMsg('Không đọc được dòng nào trong file.');
+    showMsg('Đã nạp ' + added + ' dòng vào phiếu nhập — kiểm tra rồi bấm Lưu phiếu nhập.' + (bad.length ? ' Bỏ qua ' + bad.length + ' mã chưa có trong danh mục: ' + bad.slice(0, 5).join(', ') + (bad.length > 5 ? '…' : '') : ''), added > 0);
+  }).catch(e => showMsg('Không đọc được file: ' + e.message));
+});
+$('tXlsx').onclick = () => {
+  if (!D) return;
+  needXlsx().then(() => {
+    const name = {}; D.products.forEach(p => { name[p.code] = p.name; });
+    const aoa = [['Mã', 'Tên sản phẩm', 'Màu', 'Size', 'Đã nhập', 'Đã bán', 'Còn tồn', 'Trạng thái']]
+      .concat(D.stock.map(s => [s.code, name[s.code] || '', s.color, s.size, s.inQty, s.outQty, s.qty, stockTag(s.qty)[1]]));
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'TonKho');
+    XLSX.writeFile(wb, 'Ton_kho_' + D.today + '.xlsx');
+  }).catch(e => showMsg(e.message));
 };
 
 function xRange(r) {
@@ -1549,7 +1613,7 @@ function renderXnt() {
   const q = norm($('xQ').value.trim());
   const rows = XNT.rows.filter(r => !q || norm([r.code, r.name, r.color, r.size].join(' ')).includes(q));
   const sum = f => rows.reduce((s, r) => s + r[f], 0);
-  $('xntBox').innerHTML = rows.length ? `<div class="tblwrap"><table class="xnt">
+  $('xntBox').innerHTML = rows.length ? `<div style="text-align:right;margin-bottom:8px"><button type="button" class="btn-ghost" id="xXlsx">⬇ Xuất Excel</button></div><div class="tblwrap"><table class="xnt">
     <thead><tr><th>Mã</th><th>Tên sản phẩm</th><th>Màu</th><th>Size</th><th class="n">Tồn đầu</th><th class="n">Nhập</th>
       <th class="n">Xuất (bán)</th><th class="n">Tồn cuối</th></tr></thead>
     <tbody>${rows.map(r => `<tr><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td>${esc(r.color)}</td><td>${esc(r.size)}</td>
@@ -1558,6 +1622,14 @@ function renderXnt() {
     <tfoot><tr><td colspan="4">Cộng (${rows.length} dòng)</td><td class="n">${sum('open')}</td><td class="n">${sum('in')}</td>
       <td class="n">${sum('out')}</td><td class="n">${sum('close')}</td></tr></tfoot></table></div>`
     : '<p style="color:var(--muted)">Không có số liệu trong kỳ này.</p>';
+  const xb = $('xXlsx');
+  if (xb) xb.onclick = () => needXlsx().then(() => {
+    const aoa = [['Mã', 'Tên sản phẩm', 'Màu', 'Size', 'Tồn đầu', 'Nhập', 'Xuất (bán)', 'Tồn cuối']]
+      .concat(rows.map(r => [r.code, r.name, r.color, r.size, r.open, r.in || 0, r.out || 0, r.close]));
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'XuatNhapTon');
+    XLSX.writeFile(wb, 'Xuat_nhap_ton_' + $('xFrom').value + '_den_' + $('xTo').value + '.xlsx');
+  }).catch(e => showMsg(e.message));
 }
 
 /* ---------------- tổng quan (dashboard) ---------------- */
