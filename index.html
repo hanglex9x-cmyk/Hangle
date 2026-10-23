@@ -706,7 +706,7 @@ $('ncPhone').addEventListener('input', () => {
 
 function addItem(pre) {
   const div = document.createElement('div');
-  div.className = 'item' + (pre ? ' filled' : '');
+  div.className = 'item' + (pre && !EDIT_CODE ? ' filled' : ''); // [23/10/2026] dang SUA DON thi khong khoa dong hang: sua duoc ca SP/mau/size
   div.innerHTML = `<div class="ln"><span class="pic"></span><span class="sum">Sản phẩm gõ tay</span>
       <input class="qty" inputmode="numeric" value="${pre ? pre.qty : 1}" title="Số lượng"><span class="amt"></span>
       <button type="button" class="btn-x" title="Xóa">✕</button></div>
@@ -1311,9 +1311,15 @@ function loadCustomer() {
             <span>${money(l.amount)}đ</span></div>`).join('')}
           <div class="money"><span>Tổng <b>${money(o.total)}</b></span><span>Đã thu ${money(o.paid)}</span>
             ${o.debt > 0 ? `<span class="debt">Nợ ${money(o.debt)}</span>` : ''}
-            <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button></div>
+            <button type="button" class="btn-ghost oView" data-code="${esc(o.code)}" title="Xem chi tiết đơn">${ICO.eye}</button> <button type="button" class="btn-ghost oEdit" data-code="${esc(o.code)}" title="Sửa đơn">${ICO.pen}</button> <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button> <button type="button" class="btn-ghost oDel" data-code="${esc(o.code)}" title="Xoá đơn">${ICO.trash}</button></div>
         </div>`).join('') : '<p style="color:var(--muted)">Khách chưa có đơn nào.</p>'}`;
     bindPdf('#custDetail', 'custView');
+    document.querySelectorAll('#custDetail .oView').forEach(b => b.onclick = () => viewOrder(b.dataset.code));
+    document.querySelectorAll('#custDetail .oEdit').forEach(b => b.onclick = () => startEditOrder(b.dataset.code));
+    document.querySelectorAll('#custDetail .oDel').forEach(b => b.onclick = () => {
+      if (confirm('XOÁ HẲN đơn ' + b.dataset.code + '?\nĐơn sẽ biến mất khỏi danh sách và Sheet. (Khác với Hủy: hủy vẫn giữ lại lịch sử đơn.)'))
+        act('deleteOrder', [b.dataset.code], 'Đã xoá đơn ' + b.dataset.code + '.', loadCustomer);
+    });
   }).withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Lỗi tải khách: ' + e.message); })
     .getCustomerDetail(c.code, PIN);
 }
