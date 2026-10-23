@@ -371,7 +371,17 @@ svg.ic{width:16px;height:16px;vertical-align:-3px}svg.icc{width:12px;height:12px
     <div id="custRows"></div>
   </div>
 
-  <div id="dashView"><div id="dashBox"><p style="color:var(--muted)">Đang tải tổng quan…</p></div></div>
+  <div id="dashView"><div id="dashBox"><p style="color:var(--muted)">Đang tải tổng quan…</p></div>
+    <section style="margin-top:14px">
+      <h2>Mẫu tin Zalo gửi khách</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:6px">Sửa nội dung rồi bấm Lưu — các đơn tạo sau sẽ dùng mẫu mới. Biến tự thay: <b>{ten}</b> tên khách · <b>{madon}</b> mã đơn · <b>{ngay}</b> ngày · <b>{chitiet}</b> danh sách sản phẩm · <b>{tong}</b> · <b>{datra}</b> · <b>{conlai}</b> số tiền · <b>{link}</b> link PDF (dòng chứa {link} tự ẩn khi đơn chưa có PDF).</p>
+      <textarea id="zTpl" rows="8" style="width:100%"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button type="button" class="btn-pri" id="zTplSave">Lưu mẫu tin</button>
+        <button type="button" class="btn-ghost" id="zTplReset">Về mẫu mặc định</button>
+      </div>
+    </section>
+  </div>
 
   <div id="rateView" style="display:none">
     <section>
@@ -909,6 +919,20 @@ $('reprint').onclick = () => {
     .withFailureHandler(e => { showMsg(e.message); done(); }).exportOrderPdf(code, PIN);
 };
 
+const ZALO_TPL_DEFAULT = 'Chào {ten}, shop gửi bạn đơn hàng {madon} ({ngay}):\n{chitiet}\nTổng: {tong}đ | Đã trả: {datra}đ | Còn lại: {conlai}đ\nHàng order từ 12-18 ngày\nHàng may từ 4 tuần trở lên\nXem đơn (PDF): {link}';
+function zaloText(o, r, pdfUrl) {
+  let tpl = (D.zaloTpl || '').trim() || ZALO_TPL_DEFAULT;
+  if (!pdfUrl) tpl = tpl.split('\n').filter(l => l.indexOf('{link}') < 0).join('\n');
+  const rep = {
+    '{ten}': o.customer.name, '{madon}': r.orderCode, '{ngay}': o.date,
+    '{chitiet}': o.lines.map(l => `- ${l.name} ${l.color} ${l.size} x${l.qty}: ${money(l.amount)}đ`).join('\n'),
+    '{tong}': money(o.total), '{datra}': money(o.paid), '{conlai}': money(o.remain), '{link}': pdfUrl || '',
+  };
+  return tpl.replace(/\{ten\}|\{madon\}|\{ngay\}|\{chitiet\}|\{tong\}|\{datra\}|\{conlai\}|\{link\}/g, m => rep[m]);
+}
+$('zTplSave').onclick = () => act('saveZaloTemplate', [$('zTpl').value], () => { D.zaloTpl = $('zTpl').value; return 'Đã lưu mẫu tin Zalo — các đơn sau sẽ dùng mẫu mới.'; });
+$('zTplReset').onclick = () => { $('zTpl').value = ZALO_TPL_DEFAULT; showMsg('Đã đưa về mẫu mặc định — bấm Lưu mẫu tin để áp dụng.'); };
+
 function showResult(r) {
   done(); lastResult = r;
   const o = r.order;
@@ -922,10 +946,7 @@ function showResult(r) {
   if (hasPdf) $('rOpen').href = r.pdfUrl;
   const phone = String(o.customer.phone || '').replace(/\D/g, '');
   $('rZalo').href = phone ? 'https://zalo.me/' + phone : 'https://chat.zalo.me/';
-  $('rText').value = `Chào ${o.customer.name}, shop gửi bạn đơn hàng ${r.orderCode} (${o.date}):\n`
-    + o.lines.map(l => `- ${l.name} ${l.color} ${l.size} x${l.qty}: ${money(l.amount)}đ`).join('\n')
-    + `\nTổng: ${money(o.total)}đ | Đã trả: ${money(o.paid)}đ | Còn lại: ${money(o.remain)}đ\nHàng order từ 12-18 ngày\nHàng may từ 4 tuần trở lên`
-    + (hasPdf ? `\nXem đơn (PDF): ${r.pdfUrl}` : '');
+  $('rText').value = zaloText(o, r, hasPdf ? r.pdfUrl : '');
   showMsg(hasPdf ? 'PDF đơn ' + r.orderCode + ' đã lưu vào Google Drive.' : 'Đã tạo đơn ' + r.orderCode + ' (đã ghi vào DON_HANG).', true);
 }
 $('rPdf').onclick = () => {
@@ -1558,6 +1579,7 @@ function delta(a, b) {
 }
 const kpi = (label, value, sub, warn) => `<div class="kpi${warn ? ' warn' : ''}">${label}<b>${value}</b>${sub || ''}</div>`;
 function renderDash(d) {
+  const zt = $('zTpl'); if (zt && document.activeElement !== zt) zt.value = (D.zaloTpl || '').trim() || ZALO_TPL_DEFAULT;
   const t = d.todayStat, m = d.month, pm = d.prevMonth, o = d.open;
   const max = Math.max(...d.months.map(x => x.revenue), 1);
   const curM = new Date().getFullYear() === d.year ? new Date().getMonth() + 1 : 0;
