@@ -1321,6 +1321,20 @@ function loadCustomer() {
     $('app').classList.remove('loading');
     const k = r.customer, s = r.summary, phone = String(k.phone).replace(/\D/g, '');
     const cls = { 'Chờ hàng': 'b-cho', 'Đang xử lý': 'b-xl', 'Đã giao': 'b-giao', 'Đã hủy': 'b-huy' };
+    const ordCard = o => `
+        <div class="ord">
+          <div class="ord-top"><span><b>${esc(o.code)}</b> • ${esc(o.date)}</span><span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span></div>
+          ${o.lines.map(l => `<div class="line ${l.cancelled ? 'x' : ''}">${thumb(l.img, 'sm')}
+            <span style="flex:1">${esc(l.code)} — ${esc(l.name)} • ${esc(l.color)} ${esc(l.size)} • x${l.qty}</span>
+            <span>${money(l.amount)}đ</span></div>`).join('')}
+          <div class="money"><span>Tổng <b>${money(o.total)}</b></span><span>Đã thu ${money(o.paid)}</span>
+            ${o.debt > 0 ? `<span class="debt">Nợ ${money(o.debt)}</span>` : ''}
+            <button type="button" class="btn-ghost oView" data-code="${esc(o.code)}" title="Xem chi tiết đơn">${ICO.eye}</button> <button type="button" class="btn-ghost oEdit" data-code="${esc(o.code)}" title="Sửa đơn">${ICO.pen}</button> <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button> <button type="button" class="btn-ghost oDel" data-code="${esc(o.code)}" title="Xoá đơn">${ICO.trash}</button></div>
+        </div>`;
+    const openCards = r.orders.filter(o => o.status !== 'Đã giao').map(ordCard).join('');
+    const doneList = r.orders.filter(o => o.status === 'Đã giao');
+    const doneCards = doneList.map(ordCard).join('');
+    const doneN = doneList.length;
     $('custDetail').innerHTML = `
       <section>
         <h2>${esc(k.code)} — ${esc(k.name)}</h2>
@@ -1337,16 +1351,7 @@ function loadCustomer() {
         <div class="tot">Tổng mua<b>${money(s.total)}</b></div><div class="tot">Đã trả<b>${money(s.paid)}</b></div>
         <div class="tot">Còn nợ<b class="${s.debt > 0 ? 'debt' : ''}">${money(s.debt)}</b></div>
       </div>
-      ${r.orders.length ? r.orders.map(o => `
-        <div class="ord">
-          <div class="ord-top"><span><b>${esc(o.code)}</b> • ${esc(o.date)}</span><span class="badge ${cls[o.status] || ''}">${esc(o.status)}</span></div>
-          ${o.lines.map(l => `<div class="line ${l.cancelled ? 'x' : ''}">${thumb(l.img, 'sm')}
-            <span style="flex:1">${esc(l.code)} — ${esc(l.name)} • ${esc(l.color)} ${esc(l.size)} • x${l.qty}</span>
-            <span>${money(l.amount)}đ</span></div>`).join('')}
-          <div class="money"><span>Tổng <b>${money(o.total)}</b></span><span>Đã thu ${money(o.paid)}</span>
-            ${o.debt > 0 ? `<span class="debt">Nợ ${money(o.debt)}</span>` : ''}
-            <button type="button" class="btn-ghost oView" data-code="${esc(o.code)}" title="Xem chi tiết đơn">${ICO.eye}</button> <button type="button" class="btn-ghost oEdit" data-code="${esc(o.code)}" title="Sửa đơn">${ICO.pen}</button> <button type="button" class="btn-ghost pdfbtn" data-code="${esc(o.code)}">PDF</button> <button type="button" class="btn-ghost oDel" data-code="${esc(o.code)}" title="Xoá đơn">${ICO.trash}</button></div>
-        </div>`).join('') : '<p style="color:var(--muted)">Khách chưa có đơn nào.</p>'}`;
+      ${r.orders.length ? openCards + (doneN ? `<label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);margin:8px 0"><input type="checkbox" id="cShowDone"> Hiện ${doneN} đơn đã giao</label><div id="cDoneBox" style="display:none">${doneCards}</div>` : '') : '<p style="color:var(--muted)">Khách chưa có đơn nào.</p>'}`;
     bindPdf('#custDetail', 'custView');
     document.querySelectorAll('#custDetail .oView').forEach(b => b.onclick = () => viewOrder(b.dataset.code));
     document.querySelectorAll('#custDetail .oEdit').forEach(b => b.onclick = () => startEditOrder(b.dataset.code));
@@ -1354,6 +1359,8 @@ function loadCustomer() {
       if (confirm('XOÁ HẲN đơn ' + b.dataset.code + '?\nĐơn sẽ biến mất khỏi danh sách và Sheet. (Khác với Hủy: hủy vẫn giữ lại lịch sử đơn.)'))
         act('deleteOrder', [b.dataset.code], 'Đã xoá đơn ' + b.dataset.code + '.', loadCustomer);
     });
+    const sd2 = $('cShowDone');
+    if (sd2) sd2.onchange = () => { $('cDoneBox').style.display = sd2.checked ? '' : 'none'; };
   }).withFailureHandler(e => { $('app').classList.remove('loading'); showMsg('Lỗi tải khách: ' + e.message); })
     .getCustomerDetail(c.code, PIN);
 }
