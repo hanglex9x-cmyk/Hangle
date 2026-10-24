@@ -327,6 +327,17 @@ svg.ic{width:16px;height:16px;vertical-align:-3px}svg.icc{width:12px;height:12px
   <button type="submit" class="btn-teal" style="margin-top:8px">Vào</button>
 </form></div>
 <div id="vModal" class="vmodal"><div class="vbox" id="vBox"></div></div>
+<div id="dModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:340px;width:100%;padding:18px">
+    <h3 style="margin:0 0 4px" id="dTitle">Xác nhận đã giao</h3>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 10px">Chọn ngày giao hàng thực tế — ngày này sẽ ghi vào cột Ngày giao của đơn (dòng đơn tự ẩn trong Sheet như cũ).</p>
+    <label>Ngày giao</label><input type="date" id="dDate" style="width:100%">
+    <div class="row" style="margin-top:14px;justify-content:flex-end;gap:8px">
+      <button type="button" class="btn-ghost" id="dCancel">Đóng</button>
+      <button type="button" class="btn-teal" id="dOk">✔ Xác nhận giao</button>
+    </div>
+  </div>
+</div>
 <div id="modal"><form id="mForm">
   <h2 id="mTitle"></h2>
   <div id="mBody" class="grid"></div>
@@ -1427,10 +1438,27 @@ function renderOrders() {
       huy: 'HỦY đơn %s? (hàng được cộng lại vào kho)', mo: 'Mở lại đơn %s (xóa ngày giao / hủy)?' };
     document.querySelectorAll('#orderList .stSel').forEach(sel => sel.onchange = () => {
       const a = sel.value; sel.selectedIndex = 0;
+      if (a === 'giao') return openGiao(sel.dataset.code);
       if (confirm(ask[a].replace('%s', sel.dataset.code)))
-        act('setOrderStatus', [sel.dataset.code, a], 'Đã cập nhật đơn ' + sel.dataset.code + '.', loadOrders);
+        act('setOrderStatus', [sel.dataset.code, a, ''], 'Đã cập nhật đơn ' + sel.dataset.code + '.', loadOrders);
     });
 }
+
+/* ---------------- [24/10/2026] xác nhận giao: chọn ngày giao ---------------- */
+let GIAO_CODE = '';
+function openGiao(code) {
+  GIAO_CODE = code;
+  $('dTitle').textContent = 'Xác nhận đã giao — ' + code;
+  $('dDate').value = (D && D.today) || '';
+  $('dModal').style.display = 'flex';
+}
+$('dCancel').onclick = () => { $('dModal').style.display = 'none'; };
+$('dModal').addEventListener('click', e => { if (e.target === $('dModal')) $('dModal').style.display = 'none'; });
+$('dOk').onclick = () => {
+  const code = GIAO_CODE, dv = $('dDate').value;
+  $('dModal').style.display = 'none';
+  act('setOrderStatus', [code, 'giao', dv], 'Đã giao đơn ' + code + (dv ? ' (ngày giao ' + dv.split('-').reverse().join('/') + ')' : '') + '.', loadOrders);
+};
 
 /* ---------------- [22/10/2026] xem / sửa / xoá đơn + hạn giao ---------------- */
 let EDIT_CODE = '';
